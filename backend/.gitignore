@@ -1,0 +1,13 @@
+__pycache__
+.idea
+.vscode
+.env
+.save
+.env.save
+venv
+.venv
+data.json
+media
+commands.txt
+*.sqlite3
+static
