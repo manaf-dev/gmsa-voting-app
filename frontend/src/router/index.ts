@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import Home from '@/views/HomeView.vue'
+import Home from '@/pages/voter/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,39 +23,39 @@ const router = createRouter({
     {
       path: '/payment/:type?',
       name: 'payment',
-      component: () => import('../views/Payment.vue'),
+      component: () => import('../pages/voter/Payment.vue'),
       props: true
     },
     {
       path: '/dashboard',
       name: 'dashboard',
-      component: () => import('../views/Dashboard.vue'),
+      component: () => import('../pages/voter/Dashboard.vue'),
       // meta: { requiresAuth: true }
     },
     {
       path: '/elections',
       name: 'elections',
-      component: () => import('../views/elections/ElectionList.vue'),
+      component: () => import('../pages/elections/ElectionList.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/elections/:id',
       name: 'election-detail',
-      component: () => import('../views/elections/ElectionDetail.vue'),
+      component: () => import('../pages/elections/ElectionDetail.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/elections/:id/vote',
       name: 'vote',
-      component: () => import('../views/elections/VotingInterface.vue'),
+      component: () => import('../pages/elections/VotingInterface.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/elections/:id/results',
       name: 'election-results',
-      component: () => import('../views/elections/ElectionResults.vue'),
+      component: () => import('../pages/elections/ElectionResults.vue'),
       meta: { requiresAuth: true },
       props: true
     },
@@ -87,13 +87,13 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/Profile.vue'),
+      component: () => import('../pages/voter/Profile.vue'),
       // meta: { requiresAuth: true }
     },
     {
       path: '/help',
       name: 'help',
-      component: () => import('../views/Help.vue')
+      component: () => import('../pages/voter/Help.vue')
     }
   ]
 })
