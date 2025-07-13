@@ -30,7 +30,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue'),
-      meta: { requiresAuth: true }
+      // meta: { requiresAuth: true }
     },
     {
       path: '/elections',
@@ -62,33 +62,33 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'admin',
-      component: () => import('../views/admin/AdminDashboard.vue'),
-      meta: { requiresAuth: true, requiresEC: true }
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+      // meta: { requiresAuth: true, requiresEC: true }
     },
     {
       path: '/admin/elections/create',
       name: 'create-election',
-      component: () => import('../views/admin/CreateElection.vue'),
-      meta: { requiresAuth: true, requiresEC: true }
+      component: () => import('../pages/admin/CreateElection.vue'),
+      // meta: { requiresAuth: true, requiresEC: true }
     },
     {
       path: '/admin/elections/:id/candidates',
       name: 'manage-candidates',
-      component: () => import('../views/admin/ManageCandidates.vue'),
-      meta: { requiresAuth: true, requiresEC: true },
-      props: true
+      component: () => import('../pages/admin/ManageCandidates.vue'),
+      // meta: { requiresAuth: true, requiresEC: true },
+      // props: true
     },
     {
       path: '/admin/members',
       name: 'member-management',
-      component: () => import('../views/admin/MemberManagement.vue'),
-      meta: { requiresAuth: true, requiresEC: true }
+      component: () => import('../pages/admin/MemberManagement.vue'),
+      // meta: { requiresAuth: true, requiresEC: true }
     },
     {
       path: '/profile',
       name: 'profile',
       component: () => import('../views/Profile.vue'),
-      meta: { requiresAuth: true }
+      // meta: { requiresAuth: true }
     },
     {
       path: '/help',
@@ -98,28 +98,28 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+// router.beforeEach((to, from, next) => {
+//   const authStore = useAuthStore()
   
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-    return
-  }
+//   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+//     next('/login')
+//     return
+//   }
   
-  if (to.meta.requiresEC && !authStore.isECMember) {
-    next('/dashboard')
-    return
-  }
+//   if (to.meta.requiresEC && !authStore.isECMember) {
+//     next('/dashboard')
+//     return
+//   }
   
-  // Check payment status for authenticated routes
-  if (to.meta.requiresAuth && authStore.isAuthenticated && !authStore.user?.can_vote) {
-    if (to.name !== 'payment') {
-      next('/payment/dues')
-      return
-    }
-  }
+//   // Check payment status for authenticated routes
+//   if (to.meta.requiresAuth && authStore.isAuthenticated && !authStore.user?.can_vote) {
+//     if (to.name !== 'payment') {
+//       next('/payment/dues')
+//       return
+//     }
+//   }
   
-  next()
-})
+//   next()
+// })
 
 export default router
