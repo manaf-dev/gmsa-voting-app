@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from email.policy import default
 from pathlib import Path
 from decouple import config
 
@@ -26,7 +27,7 @@ SECRET_KEY = "django-insecure-_ftrv*)$xe@ho@3)f&chvn8h-hju7e$kx3qr4ut(hm+@h7fb!k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
 
 
 # Application definition
