@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ArrowLeft, Backpack, BadgeCheck, Vote, Users, UserCheck } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  Backpack,
+  BadgeCheck,
+  Vote,
+  Users,
+  UserCheck,
+  SquareArrowOutUpRight,
+} from 'lucide-vue-next'
 </script>
 
 <template>
@@ -105,21 +113,22 @@ import { ArrowLeft, Backpack, BadgeCheck, Vote, Users, UserCheck } from 'lucide-
         <div class="space-y-2">
           <router-link
             to="/admin/elections/create"
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
             Create New Election
+            <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </router-link>
           <router-link
             to="/elections"
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Manage Active Elections
+            Manage Active Elections <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </router-link>
           <router-link
             to="/elections"
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            View All Elections
+            View All Elections <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </router-link>
         </div>
       </div>
@@ -129,19 +138,19 @@ import { ArrowLeft, Backpack, BadgeCheck, Vote, Users, UserCheck } from 'lucide-
         <div class="space-y-2">
           <router-link
             to="/admin/members"
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            View All Members
+            View All Members <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </router-link>
           <button
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 text-left"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Payment Reports
+            Payment Reports <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </button>
           <button
-            class="block w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 text-left"
+            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Export Member Data
+            Export Member Data <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
           </button>
         </div>
       </div>
