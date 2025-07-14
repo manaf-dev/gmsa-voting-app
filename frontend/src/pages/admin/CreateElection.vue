@@ -5,17 +5,28 @@ import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
 
-import { Plus } from 'lucide-vue-next'
+import { Plus, ArrowBigLeft } from 'lucide-vue-next'
+import router from '@/router'
 
 const isModal = ref(false)
+
+const goBack = () => {
+  router.back()
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-6xl mx-auto py-4 px-4 lg:px-8 bg-white shadow rounded">
-      <div class="py-4 mb-4 border-b border-gray-200">
+    <div class="max-w-6xl mx-4 lg:mx-auto py-4 px-4 lg:px-8 bg-white shadow rounded">
+      <div class="py-0 md:py-4 mb-4 border-b border-gray-200">
+        <button
+          @click="goBack"
+          class="flex items-center gap-1 text-blue-300 hover:bg-blue-50 mb-4 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
+        >
+          <ArrowBigLeft /> Back
+        </button>
         <h1 class="text-2xl font-bold text-gray-900">Create New Election</h1>
-        <p class="mt-1 text-sm text-gray-600">Set up a new election for GMSA members</p>
+        <p class="mt-1 text-sm text-gray-600 mb-4">Set up a new election for GMSA members</p>
       </div>
       <!-- Form for creating a new election -->
       <form>
@@ -50,7 +61,7 @@ const isModal = ref(false)
               >Start Date & Time</label
             >
             <BaseInput
-              type="date"
+              type="datetime-local"
               placeholder="e.g., GMSA Executive Elections 2025/2026"
               :required="true"
             />
@@ -60,16 +71,21 @@ const isModal = ref(false)
             <label for="academic_year" class="block text-sm font-medium text-gray-700"
               >End Date & Time</label
             >
-            <BaseInput type="date" placeholder="2025/2026" :required="true" />
+            <BaseInput type="datetime-local" placeholder="2025/2026" :required="true" />
           </div>
         </div>
-        <div class="w-full flex items-center justify-between mb-4">
-          <label class="block text-sm font-medium text-gray-700">Election Positions</label>
+        <div class="w-full flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
+          <BaseBtn
+            class="inline-flex w-full justify-center md:w-max items-center gap-1 cursor-pointer bg-green-600 hover:bg-green-700 hover:gap-1.5 transition-all duration-200 ease-in-out border-2 text-white px-4 py-2 rounded-lg truncate"
+          >
+            <Plus class="" />
+            Create Election
+          </BaseBtn>
           <BaseBtn
             @click="isModal = true"
-            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg"
+            class="inline-flex w-full justify-center md:w-max items-center gap-1 cursor-pointer bg-blue-600 hover:bg-blue-700 hover:gap-1.5 transition-all duration-200 ease-in-out border-2 text-white px-4 py-2 rounded-lg truncate"
           >
-            <Plus class="h-4 w-4" />
+            <Plus class="" />
             Add Position
           </BaseBtn>
         </div>
