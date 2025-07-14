@@ -25,18 +25,14 @@ const emit = defineEmits<{
       <!-- Position Form Block -->
       <div class="space-y-0">
         <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create Position</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-0 md:gap-6">
           <!-- Title -->
           <div>
             <label class="block text-sm font-medium text-gray-700">Position Title</label>
             <BaseInput type="text" placeholder="e.g., President, Vice President" />
           </div>
 
-          <!-- Max Votes -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Max Votes per Voter</label>
-            <BaseInput type="number" min="1" />
-          </div>
+         
 
           <!-- Remove Button -->
           <!-- <div>
@@ -58,10 +54,10 @@ const emit = defineEmits<{
         <!-- Remove Button -->
         <div class="justify-end flex">
           <BaseBtn
-            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg"
+            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
           >
             <Plus class="h-4 w-4" />
-            Add Position
+            Create Position
           </BaseBtn>
         </div>
       </div>
