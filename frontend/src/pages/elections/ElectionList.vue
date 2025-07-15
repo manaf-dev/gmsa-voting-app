@@ -68,7 +68,7 @@ const goBack = () => {
       </div> -->
 
       <div class="flex items-center overflow-x-auto gap-3 border-gray-200 mb-6 text-sm mt-10">
-        <button
+        <BaseBtn
           @click="tab = 'active'"
           :class="[
             'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
@@ -77,27 +77,25 @@ const goBack = () => {
         >
           Active Elections
           <span class="bg-green-100 text-green-600 md:ml-2 py-0.5 px-2 rounded-full">3</span>
-        </button>
-        <button
+        </BaseBtn>
+        <Basebtn
           @click="tab = 'upcoming'"
           :class="[
             'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
             tab === 'upcoming' ? 'border-b-2 border-gray-500' : 'border-transparent',
           ]"
-        >
-          Upcoming Elections
+          >Upcoming Elections
           <span class="bg-green-100 text-green-600 ml-2 py-0.5 px-2 rounded-full">3</span>
-        </button>
-        <button
+        </Basebtn>
+        <BaseBtn
           @click="tab = 'completed'"
           :class="[
             'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
             tab === 'completed' ? 'border-b-2 border-gray-500' : 'border-transparent',
           ]"
-        >
-          Completed Elections
+          >Completed Elections
           <span class="bg-green-100 text-green-600 ml-2 py-0.5 px-2 rounded-full">3</span>
-        </button>
+        </BaseBtn>
       </div>
 
       <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-4">
