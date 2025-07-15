@@ -71,7 +71,7 @@ const goBack = () => {
         <BaseBtn
           @click="tab = 'active'"
           :class="[
-            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
+            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 cursor-pointer hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
             tab === 'active' ? 'border-b-2 border-gray-500' : 'border-transparent',
           ]"
         >
@@ -81,7 +81,7 @@ const goBack = () => {
         <Basebtn
           @click="tab = 'upcoming'"
           :class="[
-            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
+            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 cursor-pointer hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
             tab === 'upcoming' ? 'border-b-2 border-gray-500' : 'border-transparent',
           ]"
           >Upcoming Elections
@@ -90,7 +90,7 @@ const goBack = () => {
         <BaseBtn
           @click="tab = 'completed'"
           :class="[
-            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
+            'flex flex-col md:flex-row items-center whitespace-nowrap text-gray-500 pb-1 cursor-pointer hover:text-gray-700 transition-all duration-200 ease-in-out border-b-2',
             tab === 'completed' ? 'border-b-2 border-gray-500' : 'border-transparent',
           ]"
           >Completed Elections
