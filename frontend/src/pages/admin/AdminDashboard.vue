@@ -153,20 +153,20 @@ import {
             View All Members
             <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </router-link>
-          <button
+          <BaseBtn
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
             <BookMarked class="w-4 h-4 text-purple-600" />
             Payment Reports
             <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
-          </button>
-          <button
+          </BaseBtn>
+          <BaseBtn
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
             <ArrowUpFromLine class="w-4 h-4 text-amber-600" />
             Export Member Data
             <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
-          </button>
+          </BaseBtn>
         </div>
       </div>
     </div>
