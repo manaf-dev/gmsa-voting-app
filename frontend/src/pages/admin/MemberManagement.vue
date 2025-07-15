@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
+import router from '@/router'
 import { ArrowBigLeft, ArrowUpFromLine, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 </script>
 
@@ -22,12 +24,12 @@ import { ArrowBigLeft, ArrowUpFromLine, ChevronsLeft, ChevronsRight } from 'luci
               <ArrowBigLeft class="h-5 w-5 mr-2" />
               Back to Admin
             </a>
-            <button
+            <BaseBtn
               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
             >
               <ArrowUpFromLine class="h-5 w-5 mr-2" />
               Export CSV
-            </button>
+            </BaseBtn>
           </div>
         </div>
 
@@ -93,18 +95,17 @@ import { ArrowBigLeft, ArrowUpFromLine, ChevronsLeft, ChevronsRight } from 'luci
         </div>
         <div class="border-t border-gray-200 py-4 w-full">
           <div class="w-max mx-auto flex items-center space-x-2">
-            <button
+            <BaseBtn
               class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <ChevronsLeft class="h-4 w-4 mr-2" />
-            </button>
+            </BaseBtn>
             <span>1 of 1</span>
-            <Base
-            <button
+            <BaseBtn
               class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <ChevronsRight class="h-4 w-4 mr-2" />
-            </button>
+            </BaseBtn>
           </div>
         </div>
       </div>
