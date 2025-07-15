@@ -7,6 +7,10 @@ import {
   Users,
   UserCheck,
   SquareArrowOutUpRight,
+  BadgePlus,
+  FileBadge2,
+  BookMarked,
+  ArrowUpFromLine,
 } from 'lucide-vue-next'
 </script>
 
@@ -115,20 +119,25 @@ import {
             to="/admin/elections/create"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
+            <BadgePlus class="w-4 h-4 text-green-600" />
             Create New Election
-            <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </router-link>
           <router-link
             to="/elections"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Manage Active Elections <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <FileBadge2 class="w-4 h-4 text-orange-600" />
+            Manage Active Elections
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </router-link>
           <router-link
             to="/elections"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            View All Elections <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <SquareArrowOutUpRight class="w-4 h-4 text-yellow-600" />
+            View All Elections
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </router-link>
         </div>
       </div>
@@ -140,17 +149,23 @@ import {
             to="/admin/members"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            View All Members <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <Users class="w-4 h-4 text-blue-600" />
+            View All Members
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </router-link>
           <button
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Payment Reports <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <BookMarked class="w-4 h-4 text-purple-600" />
+            Payment Reports
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </button>
           <button
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            Export Member Data <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" />
+            <ArrowUpFromLine class="w-4 h-4 text-amber-600" />
+            Export Member Data
+            <!-- <SquareArrowOutUpRight class="w-4 h-4 text-blue-600" /> -->
           </button>
         </div>
       </div>
