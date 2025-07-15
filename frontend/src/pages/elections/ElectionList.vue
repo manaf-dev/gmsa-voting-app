@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ArrowBigLeft, Plus, TriangleAlert } from 'lucide-vue-next'
 import { ref } from 'vue'
+import router from '@/router'
 
+import { ArrowBigLeft, Plus } from 'lucide-vue-next'
 const tab = ref('active')
+
+const goBack = () => {
+  router.back()
+}
 </script>
 <template>
   <div class="min-h-screen bg-gray-50">
@@ -10,11 +15,12 @@ const tab = ref('active')
       <div
         class="max-w-6xl mx-auto w-full flex items-center justify-between px-4 lg:px-8 py-3 md:py-5"
       >
-        <div
+        <button
+          @click="goBack"
           class="flex items-center gap-1 text-blue-300 hover:bg-blue-50 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
         >
           <ArrowBigLeft />Back
-        </div>
+        </button>
         <h1 class="text-xl font-bold">Elections</h1>
         <div>
           <span class="text-xs py-2 px-3 text-purple-800 bg-purple-100 rounded-full">Name</span>
