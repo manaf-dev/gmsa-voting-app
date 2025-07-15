@@ -12,7 +12,7 @@ import {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow border-b border-gray-200 sticky top-0 w-full">
+    <nav class="bg-white/80 border-b border-gray-200 sticky top-0 w-full">
       <div
         class="max-w-6xl w-full mx-auto px-4 lg:px-8 flex justify-between items-center py-3 md:py-5"
       >

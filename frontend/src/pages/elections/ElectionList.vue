@@ -6,7 +6,7 @@ const tab = ref('active')
 </script>
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
+    <nav class="bg-white/80 border-b border-gray-200">
       <div
         class="max-w-6xl mx-auto w-full flex items-center justify-between px-4 lg:px-8 py-3 md:py-5"
       >
