@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import router from '@/router'
 
 import { ArrowBigLeft, Plus } from 'lucide-vue-next'
