@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import router from '@/router'
 import { ref } from 'vue'
 import CreateElectionModal from '@/modules/CreateElectionModal.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
@@ -6,7 +7,6 @@ import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
 
 import { Plus, ArrowBigLeft } from 'lucide-vue-next'
-import router from '@/router'
 
 const isModal = ref(false)
 
