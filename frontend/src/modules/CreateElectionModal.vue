@@ -32,8 +32,6 @@ const emit = defineEmits<{
             <BaseInput type="text" placeholder="e.g., President, Vice President" />
           </div>
 
-         
-
           <!-- Remove Button -->
           <!-- <div>
             <label class="block text-sm font-medium text-gray-700">Election Positions</label>
@@ -51,7 +49,7 @@ const emit = defineEmits<{
           <label class="block text-sm font-medium text-gray-700">Description</label>
           <BaseTextArea placeholder="Brief description of the position..." class="mt-1" />
         </div>
-        <!-- Remove Button -->
+        <!-- Button -->
         <div class="justify-end flex">
           <BaseBtn
             class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
