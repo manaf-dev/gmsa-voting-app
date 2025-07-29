@@ -1,13 +1,19 @@
 from django.urls import path
-from . import views
+from .views import UserViewset
 
 urlpatterns = [
-    path("register/", views.register_view, name="register"),
-    path("login/", views.login_view, name="login"),
-    path("logout/", views.logout_view, name="logout"),
-    path("profile/", views.profile_view, name="profile"),
-    path("profile/update/", views.update_profile_view, name="update_profile"),
-    path("members/", views.MemberListView.as_view(), name="member_list"),
-    path("academic-years/", views.academic_years_view, name="academic_years"),
-    path("payment-status/", views.payment_status_view, name="payment_status"),
+    path("register/", UserViewset.as_view({"post": "register_user"}), name="register"),
+    path(
+        "register-bulk/",
+        UserViewset.as_view({"post": "bulk_registration"}),
+        name="bulk-register",
+    ),
+    path("login/", UserViewset.as_view({"post": "login"}), name="login"),
+    path("logout/", UserViewset.as_view({"post": "logout"}), name="logout"),
+    path("users/", UserViewset.as_view({"get": "list_users"}), name="list-users"),
+    path(
+        "users/<str:user_id>/retrieve/",
+        UserViewset.as_view({"get": "retrieve_user"}),
+        name="retrieve-user",
+    ),
 ]

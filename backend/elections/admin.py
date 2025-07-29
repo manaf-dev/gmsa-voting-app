@@ -38,9 +38,9 @@ class PositionAdmin(admin.ModelAdmin):
 
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    list_display = ("name", "position", "student_id", "vote_count")
+    list_display = ("position", "vote_count")
     list_filter = ("position__election", "position")
-    search_fields = ("name", "student_id")
+    search_fields = ("user__student_id", "position__title")
 
 
 @admin.register(Vote)

@@ -1,205 +1,208 @@
-from rest_framework import status, generics, permissions
+import csv
+from io import StringIO
+import secrets
+import select
+import string
+from rest_framework import status, generics, permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
-from .models import User, UserProfile, AcademicYear
+from .models import User, AcademicYear
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
     UserSerializer,
-    UserProfileSerializer,
     AcademicYearSerializer,
 )
+from .selectors import get_all_users, get_user_by_id
+from docs.accounts import *
 
 
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def register_view(request):
-    serializer = UserRegistrationSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        UserProfile.objects.create(user=user)
-        token, created = Token.objects.get_or_create(user=user)
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "token": token.key,
-                "message": "Registration successful",
-                "payment_required": not user.has_paid_current_dues,
-            },
-            status=status.HTTP_201_CREATED,
-        )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserViewset(viewsets.ViewSet):
+    """Viewset for user operations"""
 
+    def _generate_random_password(self, length=10):
+        """Generate a random password with letters, digits, and punctuation."""
+        characters = string.ascii_letters + string.digits + string.punctuation
+        return "".join(secrets.choice(characters) for _ in range(length))
 
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def login_view(request):
-    serializer = UserLoginSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.validated_data["user"]
-
-        # Check if user has paid current year dues
-        if not user.can_vote:
+    @register_user_schema
+    def register_user(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
             return Response(
-                {
-                    "error": f"You must pay your dues for the {user.current_academic_year} academic year before accessing the system",
-                    "payment_required": True,
-                    "user_id": user.id,
-                    "academic_year": user.current_academic_year,
-                    "user_info": {
-                        "username": user.username,
-                        "year_of_study": user.year_of_study,
-                        "is_current_student": user.is_current_student,
-                    },
-                },
-                status=status.HTTP_402_PAYMENT_REQUIRED,
+                {"detail": "Registration successful"},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @bulk_registration_schema
+    def bulk_registration(self, request):
+
+        file = request.FILES.get("file")
+        if not file:
+            return Response(
+                {"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        login(request, user)
-        token, created = Token.objects.get_or_create(user=user)
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "token": token.key,
-                "message": "Login successful",
-            }
-        )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-def logout_view(request):
-    if request.user.is_authenticated:
         try:
-            request.user.auth_token.delete()
-        except:
-            pass
-        logout(request)
-    return Response({"message": "Logout successful"})
+            decoded_file = file.read().decode("utf-8")
+            csv_data = StringIO(decoded_file)
+            reader = csv.DictReader(csv_data)
 
+            # check if required fields are present
+            required_fields = [
+                "username",
+                "email",
+                "first_name",
+                "last_name",
+                "student_id",
+                "phone_number",
+                "year_of_study",
+            ]
+            for field in required_fields:
+                if field not in reader.fieldnames:
+                    return Response(
+                        {f"Missing required field: {field}"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-@api_view(["GET"])
-def profile_view(request):
-    user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
+            for row in reader:
+                # generate password
+                row["password"] = row["confirm_password"] = (
+                    self._generate_random_password()
+                )
+                serializer = UserRegistrationSerializer(data=row)
+                if serializer.is_valid():
+                    user = serializer.save()
+                else:
+                    return Response(
+                        serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    )
 
-    # Get user's dues payment history
-    dues_payments = user.get_all_dues_payments()
+            return Response(
+                {"detail": "Users registered successfully"},
+                status=status.HTTP_201_CREATED,
+            )
 
-    return Response(
-        {
-            "user": UserSerializer(user).data,
-            "profile": UserProfileSerializer(profile).data,
-            "dues_history": [
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @login_schema
+    def login(self, request):
+        serializer = UserLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+
+            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response(
                 {
-                    "academic_year": dp.academic_year,
-                    "amount": dp.payment.amount,
-                    "payment_date": dp.payment.transaction_date,
-                    "is_current_year": dp.is_current_year,
+                    "user": UserSerializer(user).data,
+                    "token": token.key,
+                    "message": "Login successful",
                 }
-                for dp in dues_payments
-            ],
-        }
-    )
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def logout(self, request):
+        if request.user.is_authenticated:
+            try:
+                request.user.auth_token.delete()
+            except:
+                pass
+            logout(request)
+        return Response({"message": "Logout successful"})
+
+    def list_users(self, request):
+        """List all users"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        users = get_all_users()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    @retrieve_user_schema
+    def retrieve_user(self, request, user_id):
+        """Retrieve a single user by ID"""
+        user = get_user_by_id(user_id)
+        if not user:
+            return Response(
+                {"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
 
-@api_view(["PUT"])
-def update_profile_view(request):
-    user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
+# class MemberListView(generics.ListAPIView):
+#     serializer_class = UserSerializer
+#     permission_classes = [permissions.IsAuthenticated]
 
-    user_serializer = UserSerializer(
-        user, data=request.data.get("user", {}), partial=True
-    )
-    profile_serializer = UserProfileSerializer(
-        profile, data=request.data.get("profile", {}), partial=True
-    )
-
-    if user_serializer.is_valid() and profile_serializer.is_valid():
-        user_serializer.save()
-        profile_serializer.save()
-        return Response(
-            {
-                "user": user_serializer.data,
-                "profile": profile_serializer.data,
-                "message": "Profile updated successfully",
-            }
-        )
-
-    errors = {}
-    if not user_serializer.is_valid():
-        errors.update(user_serializer.errors)
-    if not profile_serializer.is_valid():
-        errors.update(profile_serializer.errors)
-
-    return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+#     def get_queryset(self):
+#         if not self.request.user.is_ec_member and not self.request.user.is_staff:
+#             return User.objects.none()
+#         return User.objects.all().order_by("-date_joined")
 
 
-class MemberListView(generics.ListAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        if not self.request.user.is_ec_member and not self.request.user.is_staff:
-            return User.objects.none()
-        return User.objects.all().order_by("-date_joined")
-
-
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def academic_years_view(request):
-    """Get all academic years"""
-    years = AcademicYear.objects.all()
-    return Response(
-        {
-            "academic_years": AcademicYearSerializer(years, many=True).data,
-            "current_year": AcademicYear.get_current_year_string(),
-        }
-    )
+# @api_view(["GET"])
+# @permission_classes([permissions.IsAuthenticated])
+# def academic_years_view(request):
+#     """Get all academic years"""
+#     years = AcademicYear.objects.all()
+#     return Response(
+#         {
+#             "academic_years": AcademicYearSerializer(years, many=True).data,
+#             "current_year": AcademicYear.get_current_year_string(),
+#         }
+#     )
 
 
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def payment_status_view(request):
-    """Check user's payment status for current and previous years"""
-    user = request.user
-    current_year = user.current_academic_year
+# @api_view(["GET"])
+# @permission_classes([permissions.IsAuthenticated])
+# def payment_status_view(request):
+#     """Check user's payment status for current and previous years"""
+#     user = request.user
+#     current_year = user.current_academic_year
 
-    # Get payment status for current year
-    current_payment = user.get_dues_payment_for_year(current_year)
+#     # Get payment status for current year
+#     current_payment = user.get_dues_payment_for_year(current_year)
 
-    # Get all payment history
-    all_payments = user.get_all_dues_payments()
+#     # Get all payment history
+#     all_payments = user.get_all_dues_payments()
 
-    return Response(
-        {
-            "current_academic_year": current_year,
-            "has_paid_current_dues": user.has_paid_current_dues,
-            "can_vote": user.can_vote,
-            "current_payment": {
-                "paid": bool(current_payment),
-                "payment_date": (
-                    current_payment.payment.transaction_date
-                    if current_payment
-                    else None
-                ),
-                "amount": current_payment.payment.amount if current_payment else None,
-            },
-            "payment_history": [
-                {
-                    "academic_year": dp.academic_year,
-                    "amount": dp.payment.amount,
-                    "payment_date": dp.payment.transaction_date,
-                    "is_current_year": dp.is_current_year,
-                }
-                for dp in all_payments
-            ],
-            "user_info": {
-                "year_of_study": user.year_of_study,
-                "is_current_student": user.is_current_student,
-                "years_since_admission": user.years_since_admission,
-            },
-        }
-    )
+#     return Response(
+#         {
+#             "current_academic_year": current_year,
+#             "has_paid_current_dues": user.has_paid_current_dues,
+#             "can_vote": user.can_vote,
+#             "current_payment": {
+#                 "paid": bool(current_payment),
+#                 "payment_date": (
+#                     current_payment.payment.transaction_date
+#                     if current_payment
+#                     else None
+#                 ),
+#                 "amount": current_payment.payment.amount if current_payment else None,
+#             },
+#             "payment_history": [
+#                 {
+#                     "academic_year": dp.academic_year,
+#                     "amount": dp.payment.amount,
+#                     "payment_date": dp.payment.transaction_date,
+#                     "is_current_year": dp.is_current_year,
+#                 }
+#                 for dp in all_payments
+#             ],
+#             "user_info": {
+#                 "year_of_study": user.year_of_study,
+#                 "is_current_student": user.is_current_student,
+#                 "years_since_admission": user.years_since_admission,
+#             },
+#         }
+#     )

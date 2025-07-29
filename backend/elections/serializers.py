@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Election, Position, Candidate, Vote, ElectionResult
+from accounts.serializers import UserSerializer
 
 
 class CandidateSerializer(serializers.ModelSerializer):
@@ -9,6 +10,16 @@ class CandidateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candidate
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["position"] = {
+            "id": instance.position.id,
+            "title": instance.position.title,
+            "description": instance.position.description,
+            "order": instance.position.order,
+        }
+        data["user"] = UserSerializer(instance.user).data
 
 
 class PositionSerializer(serializers.ModelSerializer):
@@ -33,7 +44,16 @@ class ElectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Election
         fields = "__all__"
-        read_only_fields = ("created_by",)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["created_by"] = {
+            "id": instance.created_by.id,
+            "display_name": instance.created_by.display_name,
+            "email": instance.created_by.email,
+        }
+        data["positions"] = PositionSerializer(instance.positions.all(), many=True).data
+        return data
 
 
 class ElectionListSerializer(serializers.ModelSerializer):

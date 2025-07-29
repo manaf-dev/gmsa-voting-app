@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, UserProfile, AcademicYear
+from .models import User, AcademicYear, YEAR_CHOICES
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -11,7 +11,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "username",
-            "email",
             "first_name",
             "last_name",
             "student_id",
@@ -26,12 +25,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError("Passwords don't match")
-
-        # Set admission year if not provided
-        if not attrs.get("admission_year"):
-            from datetime import datetime
-
-            attrs["admission_year"] = datetime.now().year
 
         return attrs
 
@@ -62,13 +55,6 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    display_name = serializers.ReadOnlyField()
-    can_vote = serializers.ReadOnlyField()
-    has_paid_current_dues = serializers.ReadOnlyField()
-    current_academic_year = serializers.ReadOnlyField()
-    is_current_student = serializers.ReadOnlyField()
-    years_since_admission = serializers.ReadOnlyField()
-
     class Meta:
         model = User
         fields = (
@@ -82,23 +68,26 @@ class UserSerializer(serializers.ModelSerializer):
             "year_of_study",
             "program",
             "admission_year",
-            "has_paid_current_dues",
             "is_ec_member",
-            "display_name",
+            "created_at",
+            "updated_at",
             "can_vote",
-            "current_academic_year",
-            "is_current_student",
-            "years_since_admission",
         )
-        read_only_fields = ("has_paid_current_dues", "is_ec_member")
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["display_name"] = instance.display_name
+        representation["is_current_student"] = instance.is_current_student
+        representation["years_since_admission"] = instance.years_since_admission
+        return representation
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+# class UserProfileSerializer(serializers.ModelSerializer):
+#     user = UserSerializer(read_only=True)
 
-    class Meta:
-        model = UserProfile
-        fields = "__all__"
+#     class Meta:
+#         model = UserProfile
+#         fields = "__all__"
 
 
 class AcademicYearSerializer(serializers.ModelSerializer):

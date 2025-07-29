@@ -45,6 +45,7 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "django_extensions",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
@@ -164,6 +165,14 @@ REST_FRAMEWORK = {
     # ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "GMSA Voting System API",
+    "DESCRIPTION": "API documentation for the GMSA Voting System",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # Email settings
