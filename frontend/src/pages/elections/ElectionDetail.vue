@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/authStore'
 import { useElectionsStore } from '@/stores/elections'
 
 const route = useRoute()
@@ -16,17 +16,17 @@ const props = defineProps<{
 const election = ref<any>(null)
 const isLoading = ref(false)
 
-onMounted(async () => {
-  isLoading.value = true
-  try {
-    election.value = await electionsStore.fetchElection(props.id)
-  } catch (error) {
-    console.error('Failed to load election:', error)
-    router.push('/elections')
-  } finally {
-    isLoading.value = false
-  }
-})
+// onMounted(async () => {
+//   isLoading.value = true
+//   try {
+//     election.value = await electionsStore.fetchElection(props.id)
+//   } catch (error) {
+//     console.error('Failed to load election:', error)
+//     // router.push('/elections')
+//   } finally {
+//     isLoading.value = false
+//   }
+// })
 
 const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString('en-GB', {

@@ -6,6 +6,6 @@ defineOptions({
 
 <template>
   <button v-bind="$attrs">
-    <slot></slot>
+    <slot />
   </button>
 </template>
