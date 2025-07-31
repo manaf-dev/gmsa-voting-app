@@ -154,6 +154,12 @@ CORS_ALLOW_CREDENTIALS = True
 # Custom user model
 AUTH_USER_MODEL = "accounts.User"
 
+# Authentication backends - allow login with username or student_id
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.StudentIDBackend",  # Custom backend for student_id login
+    "django.contrib.auth.backends.ModelBackend",  # Default Django backend
+]
+
 # REST Framework configuration
 REST_FRAMEWORK = {
     # "DEFAULT_AUTHENTICATION_CLASSES": [

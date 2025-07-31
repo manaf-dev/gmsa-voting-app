@@ -28,9 +28,37 @@ bulk_registration_schema = extend_schema(
 
 login_schema = extend_schema(
     summary="User login",
-    description="This endpoint allows a user to log in by providing their username and password.",
+    description="""
+    This endpoint allows a user to log in using either their username or student ID.
+    
+    **Authentication Options:**
+    - Username + Password
+    - Student ID + Password
+    
+    **Example Login Methods:**
+    - Username: "john_doe" with password
+    - Student ID: "CS2023001" with password
+    
+    On successful login, returns user details and authentication token.
+    """,
     request=UserLoginSerializer,
-    responses={200: UserSerializer},
+    responses={
+        200: inline_serializer(
+            name="LoginSuccessSerializer",
+            fields={
+                "user": UserSerializer(),
+                "token": serializers.CharField(),
+                "message": serializers.CharField(),
+            },
+        ),
+        400: inline_serializer(
+            name="LoginErrorSerializer",
+            fields={
+                "error": serializers.CharField(),
+                "details": serializers.CharField(required=False),
+            },
+        ),
+    },
     tags=["Users"],
 )
 
