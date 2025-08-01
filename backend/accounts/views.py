@@ -19,6 +19,164 @@ from .selectors import get_all_users, get_user_by_id
 from docs.accounts import *
 
 
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def reset_user_password(request):
+    """
+    Reset a user's password (Admin/EC only)
+
+    Expected payload:
+    {
+        "student_id": "12345678"
+    }
+    """
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can reset passwords"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    student_id = request.data.get("student_id")
+    if not student_id:
+        return Response(
+            {"error": "Student ID is required"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        user = User.objects.get(student_id=student_id)
+    except User.DoesNotExist:
+        return Response(
+            {"error": f"User with student ID {student_id} not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not user.phone_number:
+        return Response(
+            {"error": "User has no phone number for SMS notification"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Generate new password
+    import secrets
+    import string
+
+    characters = string.ascii_letters + string.digits + "!@#$%^&*"
+    new_password = "".join(secrets.choice(characters) for _ in range(10))
+
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+
+    # Send SMS notification
+    try:
+        from utils.sms_service import send_password_reset_sms
+
+        sms_result = send_password_reset_sms(user, new_password, async_send=True)
+
+        if sms_result["success"]:
+            return Response(
+                {
+                    "message": f"Password reset successful for {user.student_id}",
+                    "sms_queued": True,
+                    "task_id": sms_result.get("task_id"),
+                    "new_password": new_password,  # Return for admin reference
+                    "phone_number": user.phone_number,
+                }
+            )
+        else:
+            return Response(
+                {
+                    "message": f"Password reset successful for {user.student_id}",
+                    "sms_queued": False,
+                    "sms_error": sms_result.get("error"),
+                    "new_password": new_password,  # Return for admin reference
+                    "phone_number": user.phone_number,
+                }
+            )
+    except Exception as e:
+        return Response(
+            {
+                "message": f"Password reset successful for {user.student_id}",
+                "sms_queued": False,
+                "sms_error": str(e),
+                "new_password": new_password,  # Return for admin reference
+                "phone_number": user.phone_number,
+            }
+        )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def send_voting_reminders(request):
+    """
+    Send voting reminders to users who haven't voted in active elections
+    """
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can send voting reminders"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        from elections.models import Election, Vote
+        from utils.tasks import send_voting_reminder_task
+
+        # Get active elections
+        active_elections = Election.objects.filter(status="active")
+
+        if not active_elections:
+            return Response(
+                {"message": "No active elections found", "reminders_sent": 0}
+            )
+
+        total_queued = 0
+        task_ids = []
+
+        for election in active_elections:
+            # Get users who haven't voted in this election
+            voted_user_ids = (
+                Vote.objects.filter(candidate__position__election=election)
+                .values_list("voter_id", flat=True)
+                .distinct()
+            )
+
+            eligible_users = (
+                User.objects.filter(
+                    can_vote=True, is_active=True, phone_number__isnull=False
+                )
+                .exclude(phone_number__exact="")
+                .exclude(id__in=voted_user_ids)
+            )
+
+            for user in eligible_users:
+                task = send_voting_reminder_task.delay(user.id, election.id)
+                task_ids.append(task.id)
+                total_queued += 1
+
+        if total_queued == 0:
+            return Response(
+                {
+                    "message": "No users found who need voting reminders",
+                    "reminders_queued": 0,
+                }
+            )
+
+        return Response(
+            {
+                "message": f"Voting reminders queued for {total_queued} users",
+                "reminders_queued": total_queued,
+                "task_ids": task_ids[:10],  # Return first 10 task IDs
+                "total_tasks": len(task_ids),
+            }
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": f"Failed to send voting reminders: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 class UserViewset(viewsets.ViewSet):
     """Viewset for user operations"""
 

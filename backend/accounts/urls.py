@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import UserViewset
+from .views import (
+    UserViewset,
+    reset_user_password,
+    send_voting_reminders,
+)
 
 urlpatterns = [
     path("register/", UserViewset.as_view({"post": "register_user"}), name="register"),
@@ -15,5 +19,12 @@ urlpatterns = [
         "users/<str:user_id>/retrieve/",
         UserViewset.as_view({"get": "retrieve_user"}),
         name="retrieve-user",
+    ),
+    # SMS and admin functions
+    path("admin/reset-password/", reset_user_password, name="reset-password"),
+    path(
+        "admin/send-voting-reminders/",
+        send_voting_reminders,
+        name="send-voting-reminders",
     ),
 ]
