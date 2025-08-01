@@ -10,9 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from email.policy import default
 from pathlib import Path
 from decouple import config
+from django.core.management.utils import get_random_secret_key
+
+import dj_database_url
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,10 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_ftrv*)$xe@ho@3)f&chvn8h-hju7e$kx3qr4ut(hm+@h7fb!k"
+SECRET_KEY = config("SECRET_KEY", default=get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
 
@@ -85,17 +88,22 @@ WSGI_APPLICATION = "voting_system.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DEVELOPMENT_MODE = config("DEVELOPMENT_MODE", default=True, cast=bool)
 
-DATABASES = {
-    "default": {
-        "ENGINE": config("DATABASE_ENGINE", default="django.db.backends.sqlite3"),
-        "NAME": config("DATABASE_NAME", default=BASE_DIR / "db.sqlite3"),
-        "USER": config("DATABASE_USER", default=""),
-        "PASSWORD": config("DATABASE_PASSWORD", default=""),
-        "HOST": config("DATABASE_HOST", default="localhost"),
-        "PORT": config("DATABASE_PORT", default=""),
+if DEVELOPMENT_MODE:
+
+    DATABASES = {
+        "default": {
+            "ENGINE": config("DATABASE_ENGINE", default="django.db.backends.sqlite3"),
+            "NAME": config("DATABASE_NAME", default=BASE_DIR / "db.sqlite3"),
+            "USER": config("DATABASE_USER", default=""),
+            "PASSWORD": config("DATABASE_PASSWORD", default=""),
+            "HOST": config("DATABASE_HOST", default="localhost"),
+            "PORT": config("DATABASE_PORT", default=""),
+        }
     }
-}
+elif len(sys.argv) > 1 and sys.argv[1] != "collectstatic":
+    DATABASES = {"default": dj_database_url.parse(config("DATABASE_URL"))}
 
 
 # Password validation

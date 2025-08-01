@@ -12,11 +12,13 @@ click==8.2.1
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
+dj-database-url==3.0.1
 Django==5.2.3
 django-cors-headers==4.7.0
 django-extensions==4.1
 djangorestframework==3.16.0
 drf-spectacular==0.28.0
+gunicorn==23.0.0
 idna==3.10
 inflection==0.5.1
 jmespath==1.0.1
@@ -27,6 +29,7 @@ mysqlclient==2.2.7
 packaging==25.0
 pillow==11.2.1
 prompt_toolkit==3.0.51
+psycopg2-binary==2.9.10
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 PyYAML==6.0.2
