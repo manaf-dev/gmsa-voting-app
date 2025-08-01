@@ -1,19 +1,43 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import Election, Position, Candidate, Vote, ElectionResult
+from accounts.serializers import UserSerializer
 
 
 class CandidateSerializer(serializers.ModelSerializer):
     vote_count = serializers.ReadOnlyField()
     vote_percentage = serializers.ReadOnlyField()
 
+    @extend_schema_field(serializers.IntegerField)
+    def get_vote_count(self, obj):
+        return obj.vote_count
+
+    @extend_schema_field(serializers.FloatField)
+    def get_vote_percentage(self, obj):
+        return obj.vote_percentage
+
     class Meta:
         model = Candidate
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["position"] = {
+            "id": instance.position.id,
+            "title": instance.position.title,
+            "description": instance.position.description,
+            "order": instance.position.order,
+        }
+        data["user"] = UserSerializer(instance.user).data
 
 
 class PositionSerializer(serializers.ModelSerializer):
     candidates = CandidateSerializer(many=True, read_only=True)
     total_votes = serializers.ReadOnlyField()
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_total_votes(self, obj):
+        return obj.total_votes
 
     class Meta:
         model = Position
@@ -30,10 +54,35 @@ class ElectionSerializer(serializers.ModelSerializer):
         source="created_by.display_name", read_only=True
     )
 
+    @extend_schema_field(serializers.IntegerField)
+    def get_total_votes(self, obj):
+        return obj.total_votes
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_total_voters(self, obj):
+        return obj.total_voters
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_is_active(self, obj):
+        return obj.is_active
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_can_vote(self, obj):
+        return obj.can_vote
+
     class Meta:
         model = Election
         fields = "__all__"
-        read_only_fields = ("created_by",)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["created_by"] = {
+            "id": instance.created_by.id,
+            "display_name": instance.created_by.display_name,
+            "email": instance.created_by.email,
+        }
+        data["positions"] = PositionSerializer(instance.positions.all(), many=True).data
+        return data
 
 
 class ElectionListSerializer(serializers.ModelSerializer):
@@ -43,6 +92,18 @@ class ElectionListSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(
         source="created_by.display_name", read_only=True
     )
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_total_votes(self, obj):
+        return obj.total_votes
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_total_voters(self, obj):
+        return obj.total_voters
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_is_active(self, obj):
+        return obj.is_active
 
     class Meta:
         model = Election

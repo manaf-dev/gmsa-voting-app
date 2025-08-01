@@ -5,15 +5,16 @@ from django.utils import timezone
 from datetime import datetime
 
 
+class YEAR_CHOICES(models.TextChoices):
+    LEVEL_100 = "100", "Level 100"
+    LEVEL_200 = "200", "Level 200"
+    LEVEL_300 = "300", "Level 300"
+    LEVEL_400 = "400", "Level 400"
+    GRADUATE = "graduate", "Graduate"
+    ALUMNI = "alumni", "Alumni"
+
+
 class User(AbstractUser):
-    YEAR_CHOICES = [
-        ("100", "Level 100"),
-        ("200", "Level 200"),
-        ("300", "Level 300"),
-        ("400", "Level 400"),
-        ("graduate", "Graduate"),
-        ("alumni", "Alumni"),
-    ]
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False, unique=True)
     student_id = models.CharField(max_length=20, unique=True)
@@ -26,9 +27,20 @@ class User(AbstractUser):
     is_ec_member = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    can_vote = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.username} - {self.student_id}"
+        return f"{self.student_id} - {self.get_full_name() or self.username}"
+
+    def save(self, *args, **kwargs):
+        """Override save to set admission year if not provided"""
+        if not self.admission_year:
+            if self.year_of_study in ["100", "200", "300", "400"]:
+                self.admission_year = datetime.now().year - int(self.year_of_study[0])
+            else:
+                self.admission_year = datetime.now().year
+
+        super().save(*args, **kwargs)
 
     @property
     def current_academic_year(self):
@@ -38,23 +50,6 @@ class User(AbstractUser):
             return f"{now.year}/{now.year + 1}"
         else:
             return f"{now.year - 1}/{now.year}"
-
-    @property
-    def has_paid_current_dues(self):
-        """Check if user has paid dues for current academic year"""
-        current_year = self.current_academic_year
-        return self.dues_payments.filter(
-            academic_year=current_year, payment__status="successful"
-        ).exists()
-
-    @property
-    def can_vote(self):
-        """Check if user can vote based on current year dues payment and active status"""
-        return (
-            self.has_paid_current_dues
-            and self.is_active
-            and self.year_of_study not in ["graduate", "alumni"]
-        )
 
     @property
     def display_name(self):
@@ -75,34 +70,51 @@ class User(AbstractUser):
         current_year = datetime.now().year
         return current_year - self.admission_year
 
-    def get_dues_payment_for_year(self, academic_year=None):
-        """Get dues payment for specific academic year"""
-        if not academic_year:
-            academic_year = self.current_academic_year
-
-        return self.dues_payments.filter(
-            academic_year=academic_year, payment__status="successful"
-        ).first()
-
-    def get_all_dues_payments(self):
-        """Get all successful dues payments"""
-        return self.dues_payments.filter(payment__status="successful").order_by(
-            "-academic_year"
-        )
-
     def should_graduate(self):
         """Check if student should be marked as graduate based on years since admission"""
         return self.years_since_admission >= 4 and self.is_current_student
 
+    # @property
+    # def has_paid_current_dues(self):
+    #     """Check if user has paid dues for current academic year"""
+    #     current_year = self.current_academic_year
+    #     return self.dues_payments.filter(
+    #         academic_year=current_year, payment__status="successful"
+    #     ).exists()
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
-    bio = models.TextField(blank=True)
-    social_media_handles = models.JSONField(default=dict, blank=True)
+    # @property
+    # def can_vote(self):
+    #     """Check if user can vote based on current year dues payment and active status"""
+    #     return (
+    #         self.has_paid_current_dues
+    #         and self.is_active
+    #         and self.year_of_study not in ["graduate", "alumni"]
+    #     )
 
-    def __str__(self):
-        return f"{self.user.username}'s Profile"
+    # def get_dues_payment_for_year(self, academic_year=None):
+    #     """Get dues payment for specific academic year"""
+    #     if not academic_year:
+    #         academic_year = self.current_academic_year
+
+    #     return self.dues_payments.filter(
+    #         academic_year=academic_year, payment__status="successful"
+    #     ).first()
+
+    # def get_all_dues_payments(self):
+    #     """Get all successful dues payments"""
+    #     return self.dues_payments.filter(payment__status="successful").order_by(
+    #         "-academic_year"
+    #     )
+
+
+# class UserProfile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+#     profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
+#     bio = models.TextField(blank=True)
+#     social_media_handles = models.JSONField(default=dict, blank=True)
+
+#     def __str__(self):
+#         return f"{self.user.username}'s Profile"
 
 
 class AcademicYear(models.Model):
