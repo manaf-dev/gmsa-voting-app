@@ -48,11 +48,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
 ]
 
-LOCAL_APPS = [
-    "accounts",
-    "elections",
-    "payments",
-]
+LOCAL_APPS = ["accounts", "elections", "payments", "utils"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -162,10 +158,9 @@ AUTHENTICATION_BACKENDS = [
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    # "DEFAULT_AUTHENTICATION_CLASSES": [
-    #     "rest_framework.authentication.SessionAuthentication",
-    #     "rest_framework.authentication.TokenAuthentication",
-    # ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
     # ],
@@ -195,6 +190,14 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", "AAMUSTED GMSA")
 PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", default="")
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
 
+# mnotify SMS configuration
+MNOTIFY_API_KEY = config("MNOTIFY_API_KEY", default="")
+MNOTIFY_SENDER_ID = config("MNOTIFY_SENDER_ID", default="GMSA")
+MNOTIFY_BASE_URL = config("MNOTIFY_BASE_URL", default="https://api.mnotify.com/api")
+
+# Frontend URL for SMS links
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
+
 # AWS S3 configuration for media storage
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
@@ -212,3 +215,43 @@ ACADEMIC_YEAR_END_MONTH = 8  # August
 
 # Student lifecycle settings
 MAX_STUDY_YEARS = 4  # Maximum years of study before graduation
+
+# Celery Configuration
+CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Celery worker configuration
+CELERY_WORKER_CONCURRENCY = config("CELERY_WORKER_CONCURRENCY", default=4, cast=int)
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_DISABLE_RATE_LIMITS = False
+
+# Task execution settings
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_IGNORE_RESULT = False
+CELERY_TASK_STORE_EAGER_RESULT = True
+
+# Redis connection settings for DigitalOcean
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+
+# Queue configuration
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_QUEUES = {
+    "default": {
+        "exchange": "default",
+        "exchange_type": "direct",
+        "routing_key": "default",
+    },
+    "sms_queue": {
+        "exchange": "sms",
+        "exchange_type": "direct",
+        "routing_key": "sms",
+    },
+}

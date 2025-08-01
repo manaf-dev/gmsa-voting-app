@@ -28,7 +28,7 @@ class Election(models.Model):
 
     # Election settings
     allow_multiple_votes_per_position = models.BooleanField(default=False)
-    require_dues_payment = models.BooleanField(default=True)
+    require_dues_payment = models.BooleanField(default=False)
     show_results_after_voting = models.BooleanField(default=False)
 
     class Meta:
