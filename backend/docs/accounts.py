@@ -116,5 +116,5 @@ send_voting_reminders_schema = extend_schema(
             },
         ),
     },
-    tags=["SMS"],
+    tags=["Admin"],
 )

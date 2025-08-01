@@ -188,7 +188,7 @@ election_results_schema = extend_schema(
             },
         ),
     },
-    tags=["Elections"],
+    tags=["Admin"],
 )
 
 generate_results_schema = extend_schema(
@@ -246,7 +246,7 @@ list_create_positions_schema = extend_schema(
         200: PositionSerializer(many=True),
         201: PositionSerializer,
     },
-    tags=["Elections", "Positions"],
+    tags=["Positions"],
 )
 
 retrieve_update_delete_position_schema = extend_schema(
@@ -264,7 +264,7 @@ retrieve_update_delete_position_schema = extend_schema(
         200: PositionSerializer,
         204: None,
     },
-    tags=["Elections", "Positions"],
+    tags=["Positions"],
 )
 
 # Candidate schemas
@@ -289,7 +289,7 @@ list_create_candidates_schema = extend_schema(
         200: CandidateSerializer(many=True),
         201: CandidateSerializer,
     },
-    tags=["Elections", "Candidates"],
+    tags=["Candidates"],
 )
 
 retrieve_update_delete_candidate_schema = extend_schema(
@@ -308,7 +308,7 @@ retrieve_update_delete_candidate_schema = extend_schema(
         200: CandidateSerializer,
         204: None,
     },
-    tags=["Elections", "Candidates"],
+    tags=["Candidates"],
 )
 
 # Admin schemas
@@ -337,7 +337,7 @@ admin_elections_stats_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Statistics"],
+    tags=["Admin"],
 )
 
 admin_members_schema = extend_schema(
@@ -394,7 +394,7 @@ admin_members_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Members"],
+    tags=["Admin"],
 )
 
 export_members_schema = extend_schema(
@@ -422,7 +422,7 @@ export_members_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Export"],
+    tags=["Admin"],
 )
 
 send_reminder_schema = extend_schema(
@@ -456,5 +456,5 @@ send_reminder_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Members"],
+    tags=["Admin"],
 )

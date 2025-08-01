@@ -228,7 +228,7 @@ payment_callback_schema = extend_schema(
             },
         ),
     },
-    tags=["Payments", "Webhooks"],
+    tags=["Payments"],
 )
 
 # Admin payment schemas
@@ -302,7 +302,7 @@ admin_payments_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Payments"],
+    tags=["Payments"],
 )
 
 export_payments_schema = extend_schema(
@@ -349,7 +349,7 @@ export_payments_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Export"],
+    tags=["Payments"],
 )
 
 payment_stats_schema = extend_schema(
@@ -408,5 +408,5 @@ payment_stats_schema = extend_schema(
             },
         ),
     },
-    tags=["Admin", "Statistics"],
+    tags=["Payments"],
 )
