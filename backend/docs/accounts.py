@@ -68,3 +68,53 @@ retrieve_user_schema = extend_schema(
     responses={200: UserSerializer},
     tags=["Users"],
 )
+
+reset_user_password_schema = extend_schema(
+    summary="Reset user password (Admin/EC only)",
+    description="""
+    This endpoint allows EC members and staff to reset a user's password and send SMS notification.
+    """,
+    request=inline_serializer(
+        name="ResetPasswordRequestSerializer",
+        fields={
+            "student_id": serializers.CharField(
+                required=True,
+                help_text="Student ID of the user whose password should be reset",
+            ),
+        },
+    ),
+    responses={
+        200: inline_serializer(
+            name="ResetPasswordSuccessSerializer",
+            fields={
+                "message": serializers.CharField(),
+                "new_password": serializers.CharField(),
+                "phone_number": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Users"],
+)
+
+send_voting_reminders_schema = extend_schema(
+    summary="Send voting reminders (Admin/EC only)",
+    description="""
+    This endpoint sends voting reminders to users who haven't voted in active elections.    
+    """,
+    request=None,  # No request body needed
+    responses={
+        200: inline_serializer(
+            name="VotingRemindersSuccessSerializer",
+            fields={
+                "message": serializers.CharField(),
+                "reminders_queued": serializers.IntegerField(),
+                # "task_ids": serializers.ListField(
+                #     child=serializers.CharField(),
+                #     help_text="List of Celery task IDs (first 10 shown)",
+                # ),
+                # "total_tasks": serializers.IntegerField(),
+            },
+        ),
+    },
+    tags=["SMS"],
+)

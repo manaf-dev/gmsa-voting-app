@@ -16,9 +16,17 @@ from .serializers import (
     AcademicYearSerializer,
 )
 from .selectors import get_all_users, get_user_by_id
-from docs.accounts import *
+from docs.accounts import (
+    register_user_schema,
+    bulk_registration_schema,
+    login_schema,
+    retrieve_user_schema,
+    reset_user_password_schema,
+    send_voting_reminders_schema,
+)
 
 
+@reset_user_password_schema
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def reset_user_password(request):
@@ -77,8 +85,8 @@ def reset_user_password(request):
             return Response(
                 {
                     "message": f"Password reset successful for {user.student_id}",
-                    "sms_queued": True,
-                    "task_id": sms_result.get("task_id"),
+                    # "sms_queued": True,
+                    # "task_id": sms_result.get("task_id"),
                     "new_password": new_password,  # Return for admin reference
                     "phone_number": user.phone_number,
                 }
@@ -87,8 +95,8 @@ def reset_user_password(request):
             return Response(
                 {
                     "message": f"Password reset successful for {user.student_id}",
-                    "sms_queued": False,
-                    "sms_error": sms_result.get("error"),
+                    # "sms_queued": False,
+                    # "sms_error": sms_result.get("error"),
                     "new_password": new_password,  # Return for admin reference
                     "phone_number": user.phone_number,
                 }
@@ -97,14 +105,15 @@ def reset_user_password(request):
         return Response(
             {
                 "message": f"Password reset successful for {user.student_id}",
-                "sms_queued": False,
-                "sms_error": str(e),
+                # "sms_queued": False,
+                # "sms_error": str(e),
                 "new_password": new_password,  # Return for admin reference
                 "phone_number": user.phone_number,
             }
         )
 
 
+@send_voting_reminders_schema
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def send_voting_reminders(request):
@@ -163,10 +172,10 @@ def send_voting_reminders(request):
 
         return Response(
             {
-                "message": f"Voting reminders queued for {total_queued} users",
-                "reminders_queued": total_queued,
-                "task_ids": task_ids[:10],  # Return first 10 task IDs
-                "total_tasks": len(task_ids),
+                "message": "Voting reminders sent to voters",
+                "reminders_sent": total_queued,
+                # "task_ids": task_ids[:10],  # Return first 10 task IDs
+                # "total_tasks": len(task_ids),
             }
         )
 
