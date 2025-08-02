@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
 import Home from '@/pages/voter/HomeView.vue'
 
 const router = createRouter({
@@ -42,15 +41,15 @@ const router = createRouter({
       path: '/elections/:id',
       name: 'election-detail',
       component: () => import('../pages/elections/ElectionDetail.vue'),
-      meta: { requiresAuth: true },
-      props: true
+      // meta: { requiresAuth: true },
+      // props: true
     },
     {
       path: '/elections/:id/vote',
       name: 'vote',
       component: () => import('../pages/elections/VotingInterface.vue'),
-      meta: { requiresAuth: true },
-      props: true
+      // meta: { requiresAuth: true },
+      // props: true
     },
     {
       path: '/elections/:id/results',
@@ -65,12 +64,12 @@ const router = createRouter({
       component: () => import('../pages/admin/AdminDashboard.vue'),
       // meta: { requiresAuth: true, requiresEC: true }
     },
-    {
-      path: '/admin/elections/create',
-      name: 'create-election',
-      component: () => import('../pages/admin/CreateElection.vue'),
-      // meta: { requiresAuth: true, requiresEC: true }
-    },
+    // {
+    //   path: '/admin/elections/create',
+    //   name: 'create-election',
+    //   component: () => import('../pages/admin/CreateElection.vue'),
+    //   // meta: { requiresAuth: true, requiresEC: true }
+    // },
     {
       path: '/admin/elections/:id/candidates',
       name: 'manage-candidates',
