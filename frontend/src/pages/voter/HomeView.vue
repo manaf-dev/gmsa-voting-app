@@ -65,15 +65,13 @@ const navigateToAuth = (route: string) => {
           </div>
 
           <div class="flex items-center space-x-4">
-            <template v-if="!authStore.isAuthenticated">
-              <button @click="navigateToAuth('/login')" class="btn btn-outline px-4 py-2">
-                Login
-              </button>
+            <template>
+              <button class="btn btn-outline px-4 py-2">Login</button>
               <button @click="navigateToAuth('/register')" class="btn btn-primary px-4 py-2">
                 Register
               </button>
             </template>
-            <template v-else>
+            <template>
               <router-link to="/dashboard" class="btn btn-primary px-4 py-2">
                 Dashboard
               </router-link>
@@ -109,7 +107,7 @@ const navigateToAuth = (route: string) => {
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <template v-if="!authStore.isAuthenticated">
+          <template>
             <router-link to="/register" class="btn btn-primary px-8 py-3 text-lg">
               Join GMSA Today
             </router-link>
@@ -117,7 +115,7 @@ const navigateToAuth = (route: string) => {
               Already a Member?
             </router-link>
           </template>
-          <template v-else>
+          <template>
             <router-link to="/elections" class="btn btn-primary px-8 py-3 text-lg">
               View Elections
             </router-link>
@@ -314,7 +312,7 @@ const navigateToAuth = (route: string) => {
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <template v-if="!authStore.isAuthenticated">
+          <template>
             <router-link
               to="/register"
               class="bg-white text-primary-600 hover:bg-gray-50 px-8 py-3 rounded-md font-semibold transition-colors"
@@ -328,7 +326,7 @@ const navigateToAuth = (route: string) => {
               Support GMSA
             </router-link>
           </template>
-          <template v-else>
+          <template>
             <router-link
               to="/elections"
               class="bg-white text-primary-600 hover:bg-gray-50 px-8 py-3 rounded-md font-semibold transition-colors"
