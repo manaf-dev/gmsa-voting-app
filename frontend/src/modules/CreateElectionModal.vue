@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
+import BaseBtn from '@/components/BaseBtn.vue'
 
 import { Plus, X } from 'lucide-vue-next'
 const emit = defineEmits<{
