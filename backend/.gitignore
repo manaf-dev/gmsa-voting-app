@@ -11,3 +11,12 @@ media
 commands.txt
 *.sqlite3
 static
+staticfiles
+*.log
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+*.db
+*.DS_Store
+*.egg-info
