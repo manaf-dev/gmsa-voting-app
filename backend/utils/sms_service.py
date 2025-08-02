@@ -190,7 +190,7 @@ class SMSMessageTemplates:
             user_data: Dict with username, password, student_id, first_name
         """
         return f"""Assalamu Alaikum {user_data.get("first_name", ",")},
-You have been registered been registered as a voter in the upcoming GMSA Election.
+You have been registered as a voter in the upcoming GMSA Election.
 Your account details are as follows:
 Username: {user_data['username']}
 Student ID: {user_data['student_id']}
