@@ -19,7 +19,7 @@ const SubmitUserDetails = async () => {
     await authStore.login(UserDetails)
     toast.success('Login successful!')
   } catch (error) {
-    toast.error('Invalid credentials or registration failed')
+    toast.error('Invalid credentials')
   }
 }
 </script>

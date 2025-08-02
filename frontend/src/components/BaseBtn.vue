@@ -5,7 +5,7 @@ defineOptions({
 </script>
 
 <template>
-  <button v-bind="$attrs">
+  <button v-bind="$attrs" class="cursor-pointer">
     <slot />
   </button>
 </template>
