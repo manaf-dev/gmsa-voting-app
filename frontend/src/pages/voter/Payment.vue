@@ -3,106 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { paymentService } from '@/services/payments'
-
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-
-const props = defineProps<{
-  type?: string
-}>()
-
-const paymentType = computed(() => props.type || route.params.type || 'dues')
-
-const form = ref({
-  amount: 30.0,
-  donor_name: '',
-  message: '',
-  is_anonymous: true,
-})
-
-const isLoading = ref(false)
-const error = ref('')
-const isProcessing = ref(false)
-
-const isDues = computed(() => paymentType.value === 'dues')
-const isDonation = computed(() => paymentType.value === 'donation')
-
-const canSubmit = computed(() => {
-  if (isDues.value) {
-    return form.value.amount > 0 && !isLoading.value
-  }
-  return form.value.amount > 0 && !isLoading.value
-})
-
-const currentAcademicYear = computed(() => {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  if (now.getMonth() >= 8) {
-    // September = month 8 (0-indexed)
-    return `${currentYear}/${currentYear + 1}`
-  }
-  return `${currentYear - 1}/${currentYear}`
-})
-
-onMounted(() => {
-  if (isDues.value) {
-    form.value.amount = 30.0 // Default dues amount
-  } else {
-    form.value.amount = 10.0 // Minimum donation
-  }
-})
-
-const handlePayment = async () => {
-  if (!canSubmit.value) return
-
-  isLoading.value = true
-  error.value = ''
-
-  try {
-    const paymentData: any = {
-      payment_type: paymentType.value as 'dues' | 'donation',
-      amount: form.value.amount,
-      currency: 'GHS',
-      metadata: {},
-    }
-
-    if (isDonation.value) {
-      paymentData.metadata = {
-        donor_name: form.value.is_anonymous ? '' : form.value.donor_name,
-        message: form.value.message,
-        is_anonymous: form.value.is_anonymous,
-      }
-    } else {
-      paymentData.metadata = {
-        academic_year: currentAcademicYear.value,
-      }
-    }
-
-    const response = await paymentService.initiatePayment(paymentData)
-
-    if (response.authorization_url) {
-      // Redirect to Paystack
-      window.location.href = response.authorization_url
-    }
-  } catch (err: any) {
-    error.value = err.message || 'Payment initialization failed'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const goBack = () => {
-  if (authStore.isAuthenticated) {
-    router.push('/dashboard')
-  } else {
-    router.push('/')
-  }
-}
-
-const goToLogin = () => {
-  router.push('/login')
-}
 </script>
 
 <template>
@@ -112,10 +12,7 @@ const goToLogin = () => {
     <div class="max-w-2xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
-        <button
-          @click="goBack"
-          class="mb-6 inline-flex items-center text-primary-600 hover:text-primary-700"
-        >
+        <button class="mb-6 inline-flex items-center text-primary-600 hover:text-primary-700">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -124,7 +21,6 @@ const goToLogin = () => {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          {{ authStore.isAuthenticated ? 'Back to Dashboard' : 'Back to Home' }}
         </button>
 
         <div class="mb-4">
@@ -132,22 +28,14 @@ const goToLogin = () => {
           <p class="text-sm text-gray-600">Ghana Muslim Students Association</p>
         </div>
 
-        <h2 class="text-2xl font-bold text-gray-900">
-          {{ isDues ? 'Pay Membership Dues' : 'Make a Donation' }}
-        </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          {{
-            isDues
-              ? `Pay your annual membership dues for ${currentAcademicYear}`
-              : 'Support GMSA with your generous donation'
-          }}
-        </p>
+        <h2 class="text-2xl font-bold text-gray-900">Make a Donation</h2>
+        <p class="mt-2 text-sm text-gray-600">Support GMSA with your generous donation'</p>
       </div>
 
       <!-- Payment Form -->
       <div class="bg-white rounded-xl shadow-xl p-8">
         <!-- Payment Type Info -->
-        <div v-if="isDues" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div class="flex">
             <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -160,15 +48,15 @@ const goToLogin = () => {
               <h3 class="text-sm font-medium text-blue-800">Membership Dues Payment</h3>
               <p class="text-sm text-blue-700 mt-1">
                 Annual membership dues are required to participate in elections and access member
-                benefits. Your payment covers the academic year {{ currentAcademicYear }}.
+                benefits. Your payment covers the academic
               </p>
             </div>
           </div>
         </div>
 
-        <form @submit.prevent="handlePayment" class="space-y-6">
+        <form class="space-y-6">
           <!-- Error Message -->
-          <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
             <div class="flex">
               <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path
@@ -178,7 +66,7 @@ const goToLogin = () => {
                 />
               </svg>
               <div class="ml-3">
-                <p class="text-sm text-red-800">{{ error }}</p>
+                <p class="text-sm text-red-800">Error</p>
               </div>
             </div>
           </div>
@@ -194,28 +82,22 @@ const goToLogin = () => {
               >
               <input
                 id="amount"
-                v-model.number="form.amount"
                 type="number"
                 step="0.01"
                 min="1"
                 required
-                :readonly="isDues"
                 class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
-                :placeholder="isDues ? '30.00' : '10.00'"
               />
             </div>
-            <p v-if="isDues" class="mt-1 text-xs text-gray-500">
-              Fixed annual membership dues amount
-            </p>
+            <p class="mt-1 text-xs text-gray-500">Fixed annual membership dues amount</p>
           </div>
 
           <!-- Donation specific fields -->
-          <template v-if="isDonation">
+          <template>
             <div>
               <div class="flex items-center mb-4">
                 <input
                   id="is_anonymous"
-                  v-model="form.is_anonymous"
                   type="checkbox"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
@@ -224,13 +106,12 @@ const goToLogin = () => {
                 </label>
               </div>
 
-              <div v-if="!form.is_anonymous">
+              <div>
                 <label for="donor_name" class="block text-sm font-medium text-gray-700 mb-2">
                   Donor Name (Optional)
                 </label>
                 <input
                   id="donor_name"
-                  v-model="form.donor_name"
                   type="text"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="Enter your name (optional)"
@@ -244,7 +125,6 @@ const goToLogin = () => {
               </label>
               <textarea
                 id="message"
-                v-model="form.message"
                 rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Leave a message with your donation..."
@@ -255,15 +135,9 @@ const goToLogin = () => {
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="!canSubmit"
             class="w-full btn btn-primary py-3 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg
-              v-if="isLoading"
-              class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
                 cx="12"
@@ -278,7 +152,6 @@ const goToLogin = () => {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            {{ isLoading ? 'Processing...' : `Pay ₵${form.amount.toFixed(2)}` }}
           </button>
         </form>
 
@@ -320,10 +193,7 @@ const goToLogin = () => {
         </div>
 
         <!-- Not logged in notice -->
-        <div
-          v-if="!authStore.isAuthenticated"
-          class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg"
-        >
+        <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div class="flex">
             <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -335,10 +205,7 @@ const goToLogin = () => {
             <div class="ml-3">
               <p class="text-sm text-amber-800">
                 You need to be logged in to pay membership dues.
-                <button
-                  @click="goToLogin"
-                  class="font-medium text-amber-900 hover:text-amber-700 underline"
-                >
+                <button class="font-medium text-amber-900 hover:text-amber-700 underline">
                   Sign in here
                 </button>
               </p>
