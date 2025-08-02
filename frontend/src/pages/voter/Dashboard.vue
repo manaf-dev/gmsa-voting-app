@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
             <span class="text-sm font-medium text-gray-900">Make Donation</span>
           </router-link>
           <router-link
-            to=""
+            to="/admin"
             v-if="authStore.user.is_ec_member === true"
             class="flex items-center p-4 border border-gray-200 rounded-lg"
           >
