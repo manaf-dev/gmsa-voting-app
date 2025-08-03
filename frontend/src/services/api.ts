@@ -1,9 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
+const apiInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,21 +11,21 @@ const api = axios.create({
 // Add token to requests if available
 const token = localStorage.getItem('auth_token')
 if (token) {
-  api.defaults.headers.common['Authorization'] = `Token ${token}`
+  apiInstance.defaults.headers.common['Authorization'] = `Token ${token}`
 }
 
 // Response interceptor to handle auth errors
-api.interceptors.response.use(
+apiInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       // Clear auth data and redirect to login
       localStorage.removeItem('auth_token')
-      delete api.defaults.headers.common['Authorization']
+      delete apiInstance.defaults.headers.common['Authorization']
       window.location.href = '/login'
     }
     return Promise.reject(error)
   }
 )
 
-export default api
+export default apiInstance

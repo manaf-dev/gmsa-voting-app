@@ -1,36 +1,33 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
-import BaseModal from '@/components/BaseModal.vue' // import the reusable modal
-
+import BaseModal from '@/components/BaseModal.vue'
 import { useToast } from 'vue-toastification'
 import { useElectionStore } from '@/stores/electionStore'
 import { Plus } from 'lucide-vue-next'
 
 const electionStore = useElectionStore()
 const toast = useToast()
+const route = useRoute()
 
-const props = defineProps<{
-  show: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+const props = defineProps<{ show: boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 
 const PositionDetails = reactive({
   title: '',
   description: '',
   max_candidates: '',
   order: '',
-  election: '',
+  election: route.params.id,
 })
 
 const SubmitPositionDetails = async () => {
   try {
-    await electionStore.createPosition(PositionDetails)
+    const electionId = route.params.id as string
+    await electionStore.createPosition(electionId, PositionDetails)
     toast.success('Position created successfully!')
     emit('close')
   } catch (error) {
@@ -41,7 +38,7 @@ const SubmitPositionDetails = async () => {
 
 <template>
   <BaseModal :show="show" @close="emit('close')">
-    <form @submit.prevent="SubmitPositionDetails" class="space-y-4">
+    <form @submit.prevent="SubmitPositionDetails">
       <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create Position</h1>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -50,7 +47,7 @@ const SubmitPositionDetails = async () => {
           <BaseInput
             v-model="PositionDetails.title"
             type="text"
-            placeholder="e.g., President, Vice President"
+            placeholder="e.g., President"
             required
           />
         </label>
@@ -66,7 +63,7 @@ const SubmitPositionDetails = async () => {
         </label>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4">
         <label class="block text-sm font-medium text-gray-700">
           Order
           <BaseInput v-model="PositionDetails.order" type="number" placeholder="1" />

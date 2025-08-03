@@ -6,7 +6,7 @@ defineEmits<{
 </script>
 
 <template>
-  <nav class="bg-white/80 border-b border-gray-200 fixed top-0 w-full">
+  <nav class="bg-white border-b border-gray-200 fixed top-0 w-full">
     <div
       class="max-w-6xl mx-auto w-full flex items-center justify-between px-4 lg:px-8 py-3 sm:py-5"
     >

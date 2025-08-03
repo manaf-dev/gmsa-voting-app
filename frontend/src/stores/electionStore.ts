@@ -1,3 +1,4 @@
+// src/stores/electionStore.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -8,9 +9,12 @@ export const useElectionStore = defineStore('election', () => {
 
   const loading = ref(false)
   const error = ref<string | null>(null)
+
   const availableElections = ref<any[]>([]) 
   const specificElection = ref<any | null>(null)
+  const electionPositions = ref<any[]>([]) // ✅ store positions separately
 
+  // Create Election
   async function createElection(ElectionDetails: object) {
     loading.value = true
     try {
@@ -28,14 +32,24 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  async function createPosition(PositionDetails: object) {
+  // ✅ Create Position and auto-refresh positions
+  async function createPosition(electionId: string, PositionDetails: object) {
     loading.value = true
     try {
-      const response = await apiInstance.post('/positions/', PositionDetails, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      // Create position
+      const response = await apiInstance.post(
+        `/elections/${electionId}/positions/`,
+        PositionDetails,
+        {
+          headers: {
+            Authorization: `Token ${localStorage.getItem('auth_token')}`,
+          },
+        }
+      )
+
+      // ✅ Immediately fetch updated positions
+      await retrievePositions(electionId)
+
       return response.data
     } catch (err: any) {
       error.value = 'Failed to create position'
@@ -45,6 +59,7 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
+  // Retrieve all elections
   async function retrieveElections() {
     loading.value = true
     try {
@@ -64,7 +79,27 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  
+  // ✅ Retrieve positions for a specific election
+  async function retrievePositions(electionId: string) {
+    loading.value = true
+    try {
+      const response = await apiInstance.get(`/elections/${electionId}/positions/`, {
+        headers: {
+          Authorization: `Token ${localStorage.getItem('auth_token')}`,
+        },
+      })
+
+      electionPositions.value = response.data.results || []
+      return electionPositions.value
+    } catch (err: any) {
+      error.value = 'Failed to retrieve election positions'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch single election
   async function fetchElectionDetails(id: string) {
     loading.value = true
     try {
@@ -89,9 +124,11 @@ export const useElectionStore = defineStore('election', () => {
     error,
     availableElections,
     specificElection,
+    electionPositions,
     createElection,
-    createPosition,
+    createPosition,       // ✅ auto refreshes positions
     retrieveElections,
+    retrievePositions,
     fetchElectionDetails,
   }
 })
