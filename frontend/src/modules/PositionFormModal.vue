@@ -13,27 +13,40 @@ const electionStore = useElectionStore()
 const toast = useToast()
 const route = useRoute()
 
-const props = defineProps<{ 
-  show: boolean
+const props = defineProps<{
+  showModal: boolean
   electionId: string
-  editingPosition?: any
+  editingPosition: any
 }>()
 
-const emit = defineEmits<{ (e: 'close'): void, (e: 'save'): void }>()
+const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 const PositionDetails = reactive({
   title: '',
   description: '',
   max_candidates: '',
   order: '',
-  election: route.params.id,
+  election: '',
 })
+
+// Watch for editing position changes
+watch(
+  () => props.editingPosition,
+  (newPosition) => {
+    if (newPosition) {
+      console.log('Editing position:', newPosition)
+      PositionDetails.title = newPosition.title || ''
+      PositionDetails.description = newPosition.description || ''
+      PositionDetails.max_candidates = newPosition.max_candidates || ''
+      PositionDetails.order = newPosition.order || ''
+    }
+  },
+)
 
 const SubmitPositionDetails = async () => {
   try {
     if (props.editingPosition) {
-      // For now, let's just use createPosition as updatePosition might need different API endpoint
-      await electionStore.createPosition(props.electionId, PositionDetails)
+      await electionStore.updatePosition(props.editingPosition.id, PositionDetails)
       toast.success('Position updated successfully!')
     } else {
       await electionStore.createPosition(props.electionId, PositionDetails)
@@ -49,7 +62,7 @@ const SubmitPositionDetails = async () => {
 </script>
 
 <template>
-  <BaseModal :show="show" @close="emit('close')">
+  <BaseModal :show="showModal" @close="emit('close')">
     <form @submit.prevent="SubmitPositionDetails">
       <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">
         {{ editingPosition ? 'Edit Position' : 'Create Position' }}
@@ -60,9 +73,9 @@ const SubmitPositionDetails = async () => {
           Position Title
           <BaseInput
             v-model="PositionDetails.title"
-            type="text"
-            placeholder="e.g., President"
-            required
+            :type="'text'"
+            :placeholder="'e.g., President'"
+            :required="true"
           />
         </label>
 
@@ -70,9 +83,9 @@ const SubmitPositionDetails = async () => {
           Maximum Candidates
           <BaseInput
             v-model="PositionDetails.max_candidates"
-            type="number"
-            placeholder="e.g., 2"
-            required
+            :type="'number'"
+            :placeholder="'e.g., 2'"
+            :required="false"
           />
         </label>
       </div>
@@ -80,14 +93,19 @@ const SubmitPositionDetails = async () => {
       <div class="grid grid-cols-1 gap-4">
         <label class="block text-sm font-medium text-gray-700">
           Order
-          <BaseInput v-model="PositionDetails.order" type="number" placeholder="1" />
+          <BaseInput
+            v-model="PositionDetails.order"
+            :type="'number'"
+            :placeholder="'1'"
+            :required="true"
+          />
         </label>
 
         <label class="block text-sm font-medium text-gray-700">
           Description
           <BaseTextArea
             v-model="PositionDetails.description"
-            placeholder="Brief description of the position..."
+            :placeholder="'Brief description of the position...'"
             class="mt-1"
           />
         </label>

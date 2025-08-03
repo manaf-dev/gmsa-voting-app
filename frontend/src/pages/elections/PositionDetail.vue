@@ -4,16 +4,19 @@ import BaseBtn from '@/components/BaseBtn.vue'
 import { ArrowLeft, Plus, Edit, Trash2, User } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
-import CreateCandidate from '@/modules/CreateCandidate.vue'
+import CandidateFormModal from '@/modules/CandidateFormModal.vue'
+import CandidateDetailModal from '@/modules/CandidateDetailModal.vue'
 import { useElectionStore } from '@/stores/electionStore'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
 
-const showCreateCandidateModal = ref(false)
+const showCandidateFormModal = ref(false)
 const showEditCandidateModal = ref(false)
+const showCandidateDetailModal = ref(false)
 const editingCandidate = ref(null)
+const selectedCandidate = ref(null)
 const Loading = ref(false)
 
 const positionId = route.params.positionId as string
@@ -25,7 +28,12 @@ const goBack = () => {
 
 const editCandidate = (candidate: any) => {
   editingCandidate.value = candidate
-  showEditCandidateModal.value = true
+  showCandidateFormModal.value = true
+}
+
+const viewCandidateDetails = (candidate: any) => {
+  selectedCandidate.value = candidate
+  showCandidateDetailModal.value = true
 }
 
 const deleteCandidate = async (candidateId: string) => {
@@ -80,7 +88,7 @@ onMounted(async () => {
         <div class="flex items-center gap-4">
           <BaseBtn
             class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-green-50 border-2 text-green-700 px-4 py-2 rounded-lg cursor-pointer"
-            @click="showCreateCandidateModal = true"
+            @click="showCandidateFormModal = true"
           >
             <Plus class="h-4 w-4" />
             Add Candidate
@@ -121,7 +129,7 @@ onMounted(async () => {
           <p class="text-gray-500 mb-4">Add a candidate for this position.</p>
           <BaseBtn
             class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer"
-            @click="showCreateCandidateModal = true"
+            @click="showCandidateFormModal = true"
           >
             <Plus class="h-4 w-4" />
             Add First Candidate
@@ -132,7 +140,8 @@ onMounted(async () => {
           <div
             v-for="candidate in currentPosition?.candidates"
             :key="candidate.id"
-            class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all cursor-pointer hover:border-green-300"
+            @click="viewCandidateDetails(candidate)"
           >
             <!-- Candidate Header -->
             <div class="flex justify-between items-start mb-4">
@@ -149,14 +158,14 @@ onMounted(async () => {
               </div>
               <div class="flex items-center gap-2">
                 <button
-                  @click="editCandidate(candidate)"
+                  @click.stop="editCandidate(candidate)"
                   class="p-1 text-gray-400 hover:text-blue-600 transition"
                   title="Edit Candidate"
                 >
                   <Edit class="h-4 w-4" />
                 </button>
                 <button
-                  @click="deleteCandidate(candidate.id)"
+                  @click.stop="deleteCandidate(candidate.id)"
                   class="p-1 text-gray-400 hover:text-red-600 transition"
                   title="Delete Candidate"
                 >
@@ -182,6 +191,7 @@ onMounted(async () => {
               <div v-if="candidate.manifesto">
                 <span class="text-xs text-gray-500">Manifesto:</span>
                 <p class="text-sm text-gray-700 mt-1 line-clamp-3">{{ candidate.manifesto }}</p>
+                <p class="text-xs text-green-600 mt-1 font-medium">Click to read full manifesto</p>
               </div>
               <div>
                 <span class="text-xs text-gray-500">Votes:</span>
@@ -202,19 +212,18 @@ onMounted(async () => {
     </div>
 
     <!-- Modals -->
-    <CreateCandidate
-      :show="showCreateCandidateModal"
+    <CandidateFormModal
+      :show="showCandidateFormModal"
       :positionId="positionId"
-      @close="showCreateCandidateModal = false"
+      :editingCandidate="editingCandidate"
+      @close="showCandidateFormModal = false"
       @save="fetchData()"
     />
 
-    <CreateCandidate
-      :show="showEditCandidateModal"
-      :positionId="positionId"
-      :editingCandidate="editingCandidate"
-      @close="showEditCandidateModal = false"
-      @save="fetchData()"
+    <CandidateDetailModal
+      :show="showCandidateDetailModal"
+      :candidate="selectedCandidate"
+      @close="showCandidateDetailModal = false"
     />
   </div>
 </template>

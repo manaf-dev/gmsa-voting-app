@@ -5,15 +5,15 @@ import { ArrowLeft, Edit, Users, Trash2 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
 import { ref, onMounted, computed } from 'vue'
-import CreatePosition from '@/modules/CreatePosition.vue'
+import PositionFormModal from '@/modules/PositionFormModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
 
-const showCreatePositionModal = ref(false)
+const showPositionModal = ref(false)
 const showEditPositionModal = ref(false)
-const editingPosition = ref(null)
+const editingPosition = ref({})
 const electionId = route.params.id as string
 
 const election = ref<any>(null)
@@ -35,7 +35,7 @@ const goToPosition = (positionId: string) => {
 
 const editPosition = (position: any) => {
   editingPosition.value = position
-  showEditPositionModal.value = true
+  showPositionModal.value = true
 }
 
 const deletePosition = async (positionId: string) => {
@@ -80,7 +80,8 @@ onMounted(() => {
         <div class="flex items-center gap-4">
           <BaseBtn
             class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-green-50 border-2 text-green-700 px-4 py-2 rounded-lg cursor-pointer"
-            @click="showCreatePositionModal = true"
+            @click="showPositionModal = true"
+            v-if="election.status !== 'active' && election.status !== 'completed'"
           >
             Add Position
           </BaseBtn>
@@ -116,7 +117,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl">
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl" v-if="positions.length">
         <div
           v-for="position in positions"
           :key="position.id"
@@ -127,17 +128,17 @@ onMounted(() => {
             <h3 class="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition">
               {{ position.title }}
             </h3>
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+            <div class="flex items-center gap-2 transition">
               <button
                 @click.stop="editPosition(position)"
-                class="p-1 text-gray-400 hover:text-blue-600 transition"
+                class="p-1 text-gray-400 hover:text-blue-600 transition cursor-pointer"
                 title="Edit Position"
               >
                 <Edit class="h-4 w-4" />
               </button>
               <button
                 @click.stop="deletePosition(position.id)"
-                class="p-1 text-gray-400 hover:text-red-600 transition"
+                class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
                 title="Delete Position"
               >
                 <Trash2 class="h-4 w-4" />
@@ -157,21 +158,27 @@ onMounted(() => {
           </div>
         </div>
       </div>
+      <div v-else class="text-center py-12 text-gray-500">
+        <User class="h-16 w-16 mx-auto mb-4 text-gray-300" />
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No positions available</h3>
+        <BaseBtn
+          class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer"
+          @click="showPositionModal = true" v-if="election.status !== 'active' && election.status !== 'completed'"
+        >
+          <Plus class="h-4 w-4" />
+          Add First Position
+        </BaseBtn>
+      </div>
     </div>
 
-    <CreatePosition 
-      :show="showCreatePositionModal" 
-      :electionId="electionId"
-      @close="showCreatePositionModal = false"
-      @save="fetchElectionAndPositions" 
-    />
-    
-    <CreatePosition 
-      :show="showEditPositionModal" 
+    <PositionFormModal
+      :v-if="showPositionModal"
+      :showModal="showPositionModal"
       :electionId="electionId"
       :editingPosition="editingPosition"
-      @close="showEditPositionModal = false"
+      @close="showPositionModal = false"
       @save="fetchElectionAndPositions"
     />
+    
   </div>
 </template>

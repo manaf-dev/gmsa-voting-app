@@ -82,6 +82,7 @@ const submitCandidateDetails = async () => {
           Candidate
           <UserSearchDropdown
             v-model="candidateDetails.user"
+            :selected-user-id="candidateDetails.user"
             placeholder="Search for a user by name, student ID, or email..."
             required
           />

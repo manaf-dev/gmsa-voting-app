@@ -5,7 +5,7 @@ const props = defineProps<{
   type: string
   placeholder?: string
   required?: boolean
-  modelValue?: string
+  modelValue?: any
 }>()
 
 const emit = defineEmits<{

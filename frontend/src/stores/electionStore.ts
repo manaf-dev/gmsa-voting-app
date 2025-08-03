@@ -72,12 +72,6 @@ export const useElectionStore = defineStore('election', () => {
         }
       )
 
-      // ✅ Immediately fetch updated positions
-      const electionId = specificElection.value?.id
-      if (electionId) {
-        await fetchPositions(electionId)
-      }
-
       return response.data
     } catch (err: any) {
       error.value = 'Failed to update position'
