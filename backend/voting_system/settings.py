@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from django.core.management.utils import get_random_secret_key
+
+import dj_database_url
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_ftrv*)$xe@ho@3)f&chvn8h-hju7e$kx3qr4ut(hm+@h7fb!k"
+SECRET_KEY = config("SECRET_KEY", default=get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
 
 
 # Application definition
@@ -44,13 +48,10 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "django_extensions",
+    "drf_spectacular",
 ]
 
-LOCAL_APPS = [
-    "accounts",
-    "elections",
-    "payments",
-]
+LOCAL_APPS = ["accounts", "elections", "payments", "utils"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -87,17 +88,22 @@ WSGI_APPLICATION = "voting_system.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DEVELOPMENT_MODE = config("DEVELOPMENT_MODE", default=True, cast=bool)
 
-DATABASES = {
-    "default": {
-        "ENGINE": config("DATABASE_ENGINE", default="django.db.backends.sqlite3"),
-        "NAME": config("DATABASE_NAME", default=BASE_DIR / "db.sqlite3"),
-        "USER": config("DATABASE_USER", default=""),
-        "PASSWORD": config("DATABASE_PASSWORD", default=""),
-        "HOST": config("DATABASE_HOST", default="localhost"),
-        "PORT": config("DATABASE_PORT", default=""),
+if DEVELOPMENT_MODE:
+
+    DATABASES = {
+        "default": {
+            "ENGINE": config("DATABASE_ENGINE", default="django.db.backends.sqlite3"),
+            "NAME": config("DATABASE_NAME", default=BASE_DIR / "db.sqlite3"),
+            "USER": config("DATABASE_USER", default=""),
+            "PASSWORD": config("DATABASE_PASSWORD", default=""),
+            "HOST": config("DATABASE_HOST", default="localhost"),
+            "PORT": config("DATABASE_PORT", default=""),
+        }
     }
-}
+elif len(sys.argv) > 1 and sys.argv[1] != "collectstatic":
+    DATABASES = {"default": dj_database_url.parse(config("DATABASE_URL"))}
 
 
 # Password validation
@@ -152,17 +158,30 @@ CORS_ALLOW_CREDENTIALS = True
 # Custom user model
 AUTH_USER_MODEL = "accounts.User"
 
+# Authentication backends - allow login with username or student_id
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.StudentIDBackend",  # Custom backend for student_id login
+    "django.contrib.auth.backends.ModelBackend",  # Default Django backend
+]
+
 # REST Framework configuration
 REST_FRAMEWORK = {
-    # "DEFAULT_AUTHENTICATION_CLASSES": [
-    #     "rest_framework.authentication.SessionAuthentication",
-    #     "rest_framework.authentication.TokenAuthentication",
-    # ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
     # ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "GMSA Voting System API",
+    "DESCRIPTION": "API documentation for the GMSA Voting System",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # Email settings
@@ -178,6 +197,14 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", "AAMUSTED GMSA")
 # Paystack configuration
 PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", default="")
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
+
+# mnotify SMS configuration
+MNOTIFY_API_KEY = config("MNOTIFY_API_KEY", default="")
+MNOTIFY_SENDER_ID = config("MNOTIFY_SENDER_ID", default="GMSA")
+MNOTIFY_BASE_URL = config("MNOTIFY_BASE_URL", default="https://api.mnotify.com/api")
+
+# Frontend URL for SMS links
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
 
 # AWS S3 configuration for media storage
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
@@ -196,3 +223,43 @@ ACADEMIC_YEAR_END_MONTH = 8  # August
 
 # Student lifecycle settings
 MAX_STUDY_YEARS = 4  # Maximum years of study before graduation
+
+# Celery Configuration
+CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Celery worker configuration
+CELERY_WORKER_CONCURRENCY = config("CELERY_WORKER_CONCURRENCY", default=4, cast=int)
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_DISABLE_RATE_LIMITS = False
+
+# Task execution settings
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_IGNORE_RESULT = False
+CELERY_TASK_STORE_EAGER_RESULT = True
+
+# Redis connection settings for DigitalOcean
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+
+# Queue configuration
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_QUEUES = {
+    "default": {
+        "exchange": "default",
+        "exchange_type": "direct",
+        "routing_key": "default",
+    },
+    "sms_queue": {
+        "exchange": "sms",
+        "exchange_type": "direct",
+        "routing_key": "sms",
+    },
+}

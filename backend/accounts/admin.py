@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils import timezone
-from .models import User, UserProfile, AcademicYear
+from .models import User, AcademicYear
 
 
 @admin.register(User)
@@ -11,7 +11,6 @@ class UserAdmin(BaseUserAdmin):
         "email",
         "student_id",
         "year_of_study",
-        "has_paid_current_dues",
         "is_ec_member",
         "date_joined",
     )
@@ -35,12 +34,6 @@ class UserAdmin(BaseUserAdmin):
     )
 
     actions = ["promote_to_next_level", "mark_as_graduate", "mark_as_alumni"]
-
-    def has_paid_current_dues(self, obj):
-        return obj.has_paid_current_dues
-
-    has_paid_current_dues.boolean = True
-    has_paid_current_dues.short_description = "Paid Current Dues"
 
     def promote_to_next_level(self, request, queryset):
         """Promote students to next level"""
@@ -73,13 +66,6 @@ class UserAdmin(BaseUserAdmin):
         self.message_user(request, f"Marked {queryset.count()} users as alumni.")
 
     mark_as_alumni.short_description = "Mark selected users as alumni"
-
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "user__email", "user__student_id")
-    search_fields = ("user__username", "user__email", "user__student_id")
-
 
 @admin.register(AcademicYear)
 class AcademicYearAdmin(admin.ModelAdmin):
