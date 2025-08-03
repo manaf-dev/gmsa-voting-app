@@ -49,9 +49,10 @@ retrieve_update_delete_election_schema = extend_schema(
 )
 
 cast_vote_schema = extend_schema(
-    summary="Cast vote in an election",
+    summary="Cast vote in an election with enhanced security",
     description="""
     Cast a vote for a candidate in a specific position within an election.
+    This endpoint now includes enhanced security features for anonymous voting.
     
     Requirements:
     - User must have paid dues for the current academic year
@@ -59,7 +60,15 @@ cast_vote_schema = extend_schema(
     - User cannot vote twice for the same position
     - Candidate must belong to the specified position
     
-    Returns success message and vote confirmation.
+    Security Features:
+    - Anonymous storage: No direct links between voter and vote
+    - AES-256 encryption: All vote data is encrypted
+    - Digital signatures: RSA-2048 signatures for authenticity
+    - Audit logging: Comprehensive audit trail
+    - Session tracking: Voting sessions monitored for security
+    - Integrity verification: Cryptographic hash verification
+    
+    Returns success message with vote confirmation and security status.
     """,
     request=CastVoteSerializer,
     responses={
@@ -70,6 +79,9 @@ cast_vote_schema = extend_schema(
                 "vote_id": serializers.UUIDField(),
                 "candidate_name": serializers.CharField(),
                 "position_title": serializers.CharField(),
+                "encrypted": serializers.BooleanField(),
+                "verified": serializers.BooleanField(),
+                "timestamp": serializers.DateTimeField(),
             },
         ),
         400: inline_serializer(
@@ -83,21 +95,28 @@ cast_vote_schema = extend_schema(
             name="CastVotePaymentRequiredSerializer",
             fields={
                 "error": serializers.CharField(),
-                "payment_url": serializers.URLField(required=False),
+                "payment_required": serializers.BooleanField(),
             },
         ),
     },
-    tags=["Voting"],
+    tags=["Voting", "Security"],
 )
 
 user_votes_schema = extend_schema(
-    summary="Get current user's votes for an election",
+    summary="Get current user's voting status for an election",
     description="""
-    Retrieve all votes cast by the current user in a specific election.
-    Returns the positions they've voted for and when they voted.
+    Retrieve the voting status for the current user in a specific election.
+    Due to the anonymous voting system, this endpoint shows which positions
+    the user has voted for without revealing their actual candidate choices.
     
-    Note: Actual candidate votes remain anonymous - this only shows which positions
-    the user has participated in.
+    Returns:
+    - Which positions the user has participated in
+    - Timestamps of when votes were cast
+    - Total positions available vs positions voted
+    
+    Note: Individual candidate choices remain completely anonymous and encrypted.
+    Even administrators cannot trace specific votes back to voters without
+    decryption keys and explicit authorization.
     """,
     request=None,
     responses={
@@ -106,30 +125,30 @@ user_votes_schema = extend_schema(
             fields={
                 "election_id": serializers.UUIDField(),
                 "election_title": serializers.CharField(),
-                "voted_positions": inline_serializer(
+                "user_has_voted": serializers.BooleanField(),
+                "positions_voted": inline_serializer(
                     name="VotedPositionSerializer",
                     fields={
                         "position_id": serializers.IntegerField(),
                         "position_title": serializers.CharField(),
-                        "candidate_id": serializers.IntegerField(),
-                        "candidate_name": serializers.CharField(),
-                        "timestamp": serializers.DateTimeField(),
+                        "has_voted": serializers.BooleanField(),
+                        "vote_timestamp": serializers.DateTimeField(allow_null=True),
                     },
                     many=True,
                 ),
                 "total_positions": serializers.IntegerField(),
-                "positions_voted": serializers.IntegerField(),
+                "positions_voted_count": serializers.IntegerField(),
             },
         ),
         402: inline_serializer(
             name="UserVotesPaymentRequiredSerializer",
             fields={
                 "error": serializers.CharField(),
-                "payment_url": serializers.URLField(required=False),
+                "payment_required": serializers.BooleanField(),
             },
         ),
     },
-    tags=["Voting"],
+    tags=["Voting", "Security"],
 )
 
 election_results_schema = extend_schema(
@@ -457,4 +476,244 @@ send_reminder_schema = extend_schema(
         ),
     },
     tags=["Admin"],
+)
+
+# Security schemas
+security_status_schema = extend_schema(
+    summary="Get security status for an election",
+    description="""
+    Retrieve comprehensive security status and configuration for a specific election.
+    Only EC members and staff can access this endpoint.
+    
+    Returns:
+    - Security configuration (encryption, signatures, audit logging)
+    - System security checks (keys configured, rate limiting active)
+    - Voting statistics (total votes, secure votes, verification rates)
+    - Audit trail summary
+    - Overall security status
+    """,
+    request=None,
+    parameters=[
+        OpenApiParameter(
+            name="election_id",
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description="The UUID of the election",
+        ),
+    ],
+    responses={
+        200: inline_serializer(
+            name="SecurityStatusSerializer",
+            fields={
+                "election_id": serializers.UUIDField(),
+                "election_title": serializers.CharField(),
+                "security_configuration": inline_serializer(
+                    name="SecurityConfigSerializer",
+                    fields={
+                        "vote_encryption_enabled": serializers.BooleanField(),
+                        "digital_signatures_enabled": serializers.BooleanField(),
+                        "audit_logging_enabled": serializers.BooleanField(),
+                        "ip_verification_enabled": serializers.BooleanField(),
+                        "two_factor_required": serializers.BooleanField(),
+                    },
+                ),
+                "system_security": inline_serializer(
+                    name="SystemSecuritySerializer",
+                    fields={
+                        "encryption_keys_configured": serializers.BooleanField(),
+                        "signing_keys_configured": serializers.BooleanField(),
+                        "audit_logging_active": serializers.BooleanField(),
+                        "rate_limiting_active": serializers.BooleanField(),
+                    },
+                ),
+                "voting_statistics": inline_serializer(
+                    name="VotingStatsSerializer",
+                    fields={
+                        "total_votes": serializers.IntegerField(),
+                        "secure_votes": serializers.IntegerField(),
+                        "verified_votes": serializers.IntegerField(),
+                        "encryption_rate": serializers.FloatField(),
+                        "verification_rate": serializers.FloatField(),
+                    },
+                ),
+                "audit_trail": inline_serializer(
+                    name="AuditSummarySerializer",
+                    fields={
+                        "total_audit_entries": serializers.IntegerField(),
+                    },
+                ),
+                "status": serializers.CharField(),
+            },
+        ),
+        403: inline_serializer(
+            name="SecurityStatusForbiddenSerializer",
+            fields={
+                "error": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Security", "Admin"],
+)
+
+verify_vote_integrity_schema = extend_schema(
+    summary="Verify the cryptographic integrity of a vote",
+    description="""
+    Verify the cryptographic integrity of a specific vote using digital signatures
+    and hash verification. Only EC members and staff can verify votes.
+    
+    This process:
+    - Verifies the digital signature authenticity
+    - Checks the cryptographic hash integrity
+    - Updates the vote's verification status
+    - Creates an audit log entry for the verification
+    
+    Used for forensic analysis and ensuring vote authenticity.
+    """,
+    request=None,
+    parameters=[
+        OpenApiParameter(
+            name="vote_id",
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description="The UUID of the vote to verify",
+        ),
+    ],
+    responses={
+        200: inline_serializer(
+            name="VoteIntegritySerializer",
+            fields={
+                "vote_id": serializers.UUIDField(),
+                "is_valid": serializers.BooleanField(),
+                "integrity_verified": serializers.BooleanField(),
+                "signature_verified": serializers.BooleanField(),
+                "timestamp": serializers.DateTimeField(),
+                "verification_performed_by": serializers.CharField(),
+                "verification_timestamp": serializers.DateTimeField(),
+            },
+        ),
+        403: inline_serializer(
+            name="VerifyVoteForbiddenSerializer",
+            fields={
+                "error": serializers.CharField(),
+            },
+        ),
+        404: inline_serializer(
+            name="VoteNotFoundSerializer",
+            fields={
+                "error": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Security", "Admin"],
+)
+
+audit_trail_schema = extend_schema(
+    summary="Get audit trail for an election",
+    description="""
+    Retrieve the comprehensive audit trail for a specific election.
+    Only EC members and staff can access audit trails.
+    
+    Returns the latest 100 audit log entries including:
+    - All voting activities
+    - Election management actions
+    - Security events
+    - Admin access logs
+    - System events
+    
+    Each entry includes cryptographic integrity hashes for tamper detection.
+    """,
+    request=None,
+    parameters=[
+        OpenApiParameter(
+            name="election_id",
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description="The UUID of the election",
+        ),
+    ],
+    responses={
+        200: inline_serializer(
+            name="AuditTrailSerializer",
+            fields={
+                "election_id": serializers.UUIDField(),
+                "election_title": serializers.CharField(),
+                "audit_trail": inline_serializer(
+                    name="AuditLogEntrySerializer",
+                    fields={
+                        "id": serializers.UUIDField(),
+                        "timestamp": serializers.DateTimeField(),
+                        "action": serializers.CharField(),
+                        "user": serializers.CharField(),
+                        "resource_type": serializers.CharField(),
+                        "resource_id": serializers.CharField(),
+                        "ip_address": serializers.IPAddressField(),
+                        "details": serializers.DictField(),
+                        "integrity_hash": serializers.CharField(),
+                    },
+                    many=True,
+                ),
+                "total_entries": serializers.IntegerField(),
+                "generated_at": serializers.DateTimeField(),
+                "generated_by": serializers.CharField(),
+            },
+        ),
+        403: inline_serializer(
+            name="AuditTrailForbiddenSerializer",
+            fields={
+                "error": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Security", "Admin"],
+)
+
+suspicious_activity_schema = extend_schema(
+    summary="Get suspicious activity report",
+    description="""
+    Retrieve a report of all suspicious voting activities detected by the system.
+    Only EC members and staff can access this endpoint.
+    
+    Suspicious activities include:
+    - Unusually high number of votes in a session
+    - IP address changes during voting
+    - User agent changes during voting
+    - Rapid voting patterns
+    - Multiple simultaneous sessions
+    
+    Used for security monitoring and fraud detection.
+    """,
+    request=None,
+    responses={
+        200: inline_serializer(
+            name="SuspiciousActivitySerializer",
+            fields={
+                "suspicious_activities": inline_serializer(
+                    name="SuspiciousSessionSerializer",
+                    fields={
+                        "session_id": serializers.UUIDField(),
+                        "user": serializers.CharField(),
+                        "election": serializers.CharField(),
+                        "session_start": serializers.DateTimeField(),
+                        "session_end": serializers.DateTimeField(allow_null=True),
+                        "ip_address": serializers.IPAddressField(),
+                        "votes_cast": serializers.IntegerField(),
+                        "suspicious_reason": serializers.CharField(),
+                        "country_code": serializers.CharField(allow_null=True),
+                        "city": serializers.CharField(allow_null=True),
+                    },
+                    many=True,
+                ),
+                "total_suspicious_sessions": serializers.IntegerField(),
+                "generated_at": serializers.DateTimeField(),
+                "generated_by": serializers.CharField(),
+            },
+        ),
+        403: inline_serializer(
+            name="SuspiciousActivityForbiddenSerializer",
+            fields={
+                "error": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Security", "Admin"],
 )

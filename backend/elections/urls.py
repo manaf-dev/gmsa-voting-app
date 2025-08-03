@@ -46,4 +46,21 @@ urlpatterns = [
         views.send_reminder,
         name="send-reminder",
     ),
+    # Security URLs
+    path(
+        "<uuid:election_id>/security-status/",
+        views.security_status,
+        name="security-status",
+    ),
+    path(
+        "votes/<uuid:vote_id>/verify/",
+        views.verify_vote_integrity,
+        name="verify-vote-integrity",
+    ),
+    path("<uuid:election_id>/audit-trail/", views.audit_trail, name="audit-trail"),
+    path(
+        "admin/suspicious-activity/",
+        views.suspicious_activity,
+        name="suspicious-activity",
+    ),
 ]

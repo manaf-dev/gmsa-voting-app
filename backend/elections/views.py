@@ -5,7 +5,16 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from .models import Election, Position, Candidate, Vote, ElectionResult
+from .models import (
+    Election,
+    Position,
+    Candidate,
+    Vote,
+    ElectionResult,
+    AuditLog,
+    VotingSession,
+    ElectionSecurity,
+)
 from .serializers import (
     ElectionSerializer,
     ElectionListSerializer,
@@ -14,6 +23,7 @@ from .serializers import (
     CastVoteSerializer,
     ElectionResultSerializer,
 )
+from .crypto import check_security_configuration
 from docs.elections import (
     list_create_elections_schema,
     retrieve_update_delete_election_schema,
@@ -29,6 +39,10 @@ from docs.elections import (
     admin_members_schema,
     export_members_schema,
     send_reminder_schema,
+    security_status_schema,
+    verify_vote_integrity_schema,
+    audit_trail_schema,
+    suspicious_activity_schema,
 )
 
 User = get_user_model()
@@ -94,16 +108,70 @@ def cast_vote(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Create the vote
+    # Create secure vote with encryption and audit logging
     with transaction.atomic():
-        vote = Vote.objects.create(
-            voter=request.user,
-            candidate=candidate,
+        # Create secure vote with encryption
+        use_secure_voting = getattr(position.election, "security", None)
+        if use_secure_voting and use_secure_voting.enable_vote_encryption:
+            vote = Vote.create_secure_vote(
+                voter=request.user,
+                candidate=candidate,
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+        else:
+            # Traditional vote for backwards compatibility
+            vote = Vote.objects.create(
+                voter=request.user,
+                candidate=candidate,
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+
+        # Create audit log
+        AuditLog.objects.create(
+            action="vote_cast",
+            user=request.user,
+            resource_type="vote",
+            resource_id=str(vote.id),
             ip_address=request.META.get("REMOTE_ADDR"),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+            details={
+                "election_id": str(position.election.id),
+                "position_id": str(position.id),
+                "candidate_id": str(candidate.id),
+                "encrypted": bool(vote.encrypted_vote_data),
+                "verified": vote.integrity_verified,
+            },
         )
 
+        # Update voting session
+        try:
+            session = VotingSession.objects.get(
+                user=request.user, election=position.election, session_end__isnull=True
+            )
+            session.votes_cast += 1
+            session.save()
+        except VotingSession.DoesNotExist:
+            # Create new session if doesn't exist
+            VotingSession.objects.create(
+                user=request.user,
+                election=position.election,
+                ip_address=request.META.get("REMOTE_ADDR"),
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                votes_cast=1,
+            )
+
     return Response(
-        {"message": "Vote cast successfully", "vote_id": str(vote.id)},
+        {
+            "message": "Vote cast successfully with enhanced security",
+            "vote_id": str(vote.id),
+            "candidate_name": (
+                candidate.user.display_name if candidate.user else "Unknown"
+            ),
+            "position_title": position.title,
+            "encrypted": bool(vote.encrypted_vote_data),
+            "verified": vote.integrity_verified,
+            "timestamp": vote.timestamp,
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -630,5 +698,240 @@ def send_reminder(request, member_id):
             "message": f"Payment reminder sent to {member.get_full_name()}",
             "sent_to": member.email,
             "sent_at": timezone.now(),
+        }
+    )
+
+
+# Security-related views
+@security_status_schema
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def security_status(request, election_id):
+    """
+    Get security status and configuration for an election
+    """
+
+    election = get_object_or_404(Election, id=election_id)
+
+    # Check if user can view security status
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can view security status"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Get or create security configuration
+    security_config, created = ElectionSecurity.objects.get_or_create(
+        election=election,
+        defaults={
+            "enable_vote_encryption": True,
+            "enable_digital_signatures": True,
+            "enable_audit_logging": True,
+            "enable_ip_verification": True,
+        },
+    )
+
+    # Check overall security configuration
+    config_checks = check_security_configuration()
+
+    # Get voting statistics
+    total_votes = Vote.objects.filter(candidate__position__election=election).count()
+    secure_votes = (
+        Vote.objects.filter(
+            candidate__position__election=election, encrypted_vote_data__isnull=False
+        )
+        .exclude(encrypted_vote_data="")
+        .count()
+    )
+    verified_votes = Vote.objects.filter(
+        candidate__position__election=election,
+        integrity_verified=True,
+        signature_verified=True,
+    ).count()
+
+    # Get audit logs
+    recent_audits = AuditLog.objects.filter(
+        resource_type="vote", details__election_id=str(election.id)
+    ).count()
+
+    return Response(
+        {
+            "election_id": str(election.id),
+            "election_title": election.title,
+            "security_configuration": {
+                "vote_encryption_enabled": security_config.enable_vote_encryption,
+                "digital_signatures_enabled": security_config.enable_digital_signatures,
+                "audit_logging_enabled": security_config.enable_audit_logging,
+                "ip_verification_enabled": security_config.enable_ip_verification,
+                "two_factor_required": security_config.require_two_factor_auth,
+            },
+            "system_security": config_checks,
+            "voting_statistics": {
+                "total_votes": total_votes,
+                "secure_votes": secure_votes,
+                "verified_votes": verified_votes,
+                "encryption_rate": (
+                    (secure_votes / total_votes * 100) if total_votes > 0 else 0
+                ),
+                "verification_rate": (
+                    (verified_votes / secure_votes * 100) if secure_votes > 0 else 0
+                ),
+            },
+            "audit_trail": {
+                "total_audit_entries": recent_audits,
+            },
+            "status": "secure" if all(config_checks.values()) else "needs_attention",
+        }
+    )
+
+
+@verify_vote_integrity_schema
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def verify_vote_integrity(request, vote_id):
+    """
+    Verify the integrity of a specific vote
+    """
+
+    # Only EC members and staff can verify votes
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can verify vote integrity"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        vote = Vote.objects.get(id=vote_id)
+    except Vote.DoesNotExist:
+        return Response({"error": "Vote not found"}, status=status.HTTP_404)
+
+    # Perform integrity verification
+    is_valid = vote.verify_integrity()
+
+    # Create audit log for verification
+    AuditLog.objects.create(
+        action="vote_verified",
+        user=request.user,
+        resource_type="vote",
+        resource_id=str(vote.id),
+        ip_address=request.META.get("REMOTE_ADDR"),
+        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        details={
+            "verification_result": is_valid,
+            "integrity_verified": vote.integrity_verified,
+            "signature_verified": vote.signature_verified,
+        },
+    )
+
+    return Response(
+        {
+            "vote_id": str(vote.id),
+            "is_valid": is_valid,
+            "integrity_verified": vote.integrity_verified,
+            "signature_verified": vote.signature_verified,
+            "timestamp": vote.timestamp,
+            "verification_performed_by": request.user.display_name,
+            "verification_timestamp": timezone.now(),
+        }
+    )
+
+
+@audit_trail_schema
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def audit_trail(request, election_id):
+    """
+    Get audit trail for an election
+    """
+
+    election = get_object_or_404(Election, id=election_id)
+
+    # Only EC members and staff can view audit trails
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can view audit trails"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Get audit logs for this election
+    audit_logs = AuditLog.objects.filter(
+        details__election_id=str(election.id)
+    ).order_by("-timestamp")[
+        :100
+    ]  # Latest 100 entries
+
+    # Format audit data
+    audit_data = []
+    for log in audit_logs:
+        audit_data.append(
+            {
+                "id": str(log.id),
+                "timestamp": log.timestamp,
+                "action": log.action,
+                "user": log.user.display_name if log.user else "System",
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "ip_address": log.ip_address,
+                "details": log.details,
+                "integrity_hash": log.integrity_hash,
+            }
+        )
+
+    return Response(
+        {
+            "election_id": str(election.id),
+            "election_title": election.title,
+            "audit_trail": audit_data,
+            "total_entries": audit_logs.count(),
+            "generated_at": timezone.now(),
+            "generated_by": request.user.display_name,
+        }
+    )
+
+
+@suspicious_activity_schema
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def suspicious_activity(request):
+    """
+    Get report of suspicious voting activities
+    """
+
+    # Only EC members and staff can view suspicious activity
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response(
+            {"error": "Only EC members can view suspicious activity reports"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Get suspicious voting sessions
+    suspicious_sessions = VotingSession.objects.filter(is_suspicious=True).order_by(
+        "-session_start"
+    )[:50]
+
+    # Format suspicious activity data
+    activity_data = []
+    for session in suspicious_sessions:
+        activity_data.append(
+            {
+                "session_id": str(session.id),
+                "user": session.user.display_name,
+                "election": session.election.title,
+                "session_start": session.session_start,
+                "session_end": session.session_end,
+                "ip_address": session.ip_address,
+                "votes_cast": session.votes_cast,
+                "suspicious_reason": session.suspicious_reason,
+                "country_code": session.country_code,
+                "city": session.city,
+            }
+        )
+
+    return Response(
+        {
+            "suspicious_activities": activity_data,
+            "total_suspicious_sessions": len(activity_data),
+            "generated_at": timezone.now(),
+            "generated_by": request.user.display_name,
         }
     )
