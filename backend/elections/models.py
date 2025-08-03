@@ -1,3 +1,4 @@
+import profile
 import uuid
 from django.db import models
 from django.conf import settings
@@ -95,6 +96,9 @@ class Candidate(models.Model):
     )
     manifesto = models.TextField()
     order = models.PositiveIntegerField(default=0)
+    profile_picture = models.ImageField(
+        upload_to="candidates/%Y/profile_pictures/", null=True, blank=True
+    )
 
     class Meta:
         ordering = ["order"]
