@@ -358,7 +358,7 @@ class CandidateListCreateView(generics.ListCreateAPIView):
             )
 
         # Get the user to be added as candidate
-        user_id = self.request.data.get("user_id")
+        user_id = self.request.data.get("user")
         if not user_id:
             return Response(
                 {"error": "User ID is required"}, status=status.HTTP_400_BAD_REQUEST
@@ -368,13 +368,6 @@ class CandidateListCreateView(generics.ListCreateAPIView):
             candidate_user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404)
-
-        # Check if user has paid dues (if required)
-        if position.election.require_dues_payment and not candidate_user.has_paid_dues:
-            return Response(
-                {"error": "Candidate must have paid dues to participate"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         # Check if user is already a candidate for this position
         if Candidate.objects.filter(position=position, user=candidate_user).exists():
