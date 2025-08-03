@@ -115,13 +115,6 @@ const showCreateElectionModal = ref(false) // Track modal visibility
             to="/elections"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            <FileBadge2 class="w-4 h-4 text-orange-600" />
-            Manage Active Elections
-          </router-link>
-          <router-link
-            to="/elections"
-            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
-          >
             <SquareArrowOutUpRight class="w-4 h-4 text-yellow-600" />
             View All Elections
           </router-link>
@@ -138,13 +131,6 @@ const showCreateElectionModal = ref(false) // Track modal visibility
             <Users class="w-4 h-4 text-blue-600" />
             View All Members
           </router-link>
-
-          <BaseBtn
-            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
-          >
-            <BookMarked class="w-4 h-4 text-purple-600" />
-            Payment Reports
-          </BaseBtn>
 
           <BaseBtn
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"

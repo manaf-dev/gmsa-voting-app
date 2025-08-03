@@ -45,6 +45,13 @@ const router = createRouter({
       // props: true
     },
     {
+      path: '/elections/:id/positions/:positionId',
+      name: 'position-detail',
+      component: () => import('../pages/elections/PositionDetail.vue'),
+      // meta: { requiresAuth: true },
+      // props: true
+    },
+    {
       path: '/elections/:id/vote',
       name: 'vote',
       component: () => import('../pages/elections/VotingInterface.vue'),
