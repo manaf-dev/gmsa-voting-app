@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { X, User, Mail, Calendar, BookOpen, FileText, BarChart3 } from 'lucide-vue-next'
+import { X, User, Mail, Calendar, BookOpen, FileText } from 'lucide-vue-next'
 
 interface Props {
   show: boolean
@@ -133,15 +133,6 @@ const candidateInfo = computed(() => {
                       <span class="text-sm font-medium text-gray-600">Program</span>
                     </div>
                     <p class="text-sm text-gray-800 break-words">{{ candidateInfo.program }}</p>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <BarChart3 class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm font-medium text-gray-600">Total Votes</span>
-                    </div>
-                    <p class="text-sm font-semibold text-green-600">
-                      {{ candidateInfo.voteCount }}
-                    </p>
                   </div>
                 </div>
               </div>
