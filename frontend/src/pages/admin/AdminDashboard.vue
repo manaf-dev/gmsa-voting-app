@@ -2,7 +2,6 @@
 import {
   ArrowLeft,
   Backpack,
-  BadgeCheck,
   Vote,
   Users,
   UserCheck,
@@ -14,6 +13,11 @@ import {
 } from 'lucide-vue-next'
 
 import NavBar from '@/components/NavBar.vue'
+import BaseBtn from '@/components/BaseBtn.vue'
+import CreateElection from '@/modules/CreateElection.vue'
+import { ref } from 'vue'
+
+const showCreateElectionModal = ref(false) // Track modal visibility
 </script>
 
 <template>
@@ -50,12 +54,9 @@ import NavBar from '@/components/NavBar.vue'
     <div
       class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 lg:px-8"
     >
-      <!-- Example Quick Stat Card -->
-      <div
-        class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg transition-shadow duration-200"
-      >
+      <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
         <div class="bg-blue-100 w-8 h-8 rounded-lg flex items-center justify-center">
-          <Backpack class="w-6 h-6 text-blue-600" />
+          <Backpack class="w-6 h-6" />
         </div>
         <div>
           <p class="text-sm font-medium text-gray-600">Total Elections</p>
@@ -83,7 +84,7 @@ import NavBar from '@/components/NavBar.vue'
         </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
+      <!-- <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
         <div class="bg-emerald-100 w-8 h-8 rounded-lg flex items-center justify-center">
           <UserCheck class="w-6 h-6 text-emerald-600" />
         </div>
@@ -91,7 +92,7 @@ import NavBar from '@/components/NavBar.vue'
           <p class="text-sm font-medium text-gray-600">Paid Members</p>
           <p class="text-2xl font-semibold text-gray-700">50</p>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- Quick Actions -->
@@ -101,20 +102,15 @@ import NavBar from '@/components/NavBar.vue'
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg text-green-700 mb-2 px-3">Election Management</h3>
         <div class="space-y-2">
-          <router-link
-            to="/admin/elections/create"
+          <!-- Show modal when clicked -->
+          <BaseBtn
+            @click="showCreateElectionModal = true"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
             <BadgePlus class="w-4 h-4 text-green-600" />
             Create New Election
-          </router-link>
-          <router-link
-            to="/elections"
-            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
-          >
-            <FileBadge2 class="w-4 h-4 text-orange-600" />
-            Manage Active Elections
-          </router-link>
+          </BaseBtn>
+
           <router-link
             to="/elections"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
@@ -136,14 +132,6 @@ import NavBar from '@/components/NavBar.vue'
             View All Members
           </router-link>
 
-          <!-- Example using BaseBtn -->
-          <BaseBtn
-            class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
-          >
-            <BookMarked class="w-4 h-4 text-purple-600" />
-            Payment Reports
-          </BaseBtn>
-
           <BaseBtn
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
@@ -153,5 +141,8 @@ import NavBar from '@/components/NavBar.vue'
         </div>
       </div>
     </div>
+
+    <!-- Create Election Modal -->
+    <CreateElection :show="showCreateElectionModal" @close="showCreateElectionModal = false" />
   </div>
 </template>

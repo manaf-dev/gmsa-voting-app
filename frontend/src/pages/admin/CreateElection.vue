@@ -1,17 +1,36 @@
 <script setup lang="ts">
 import router from '@/router'
-import { ref } from 'vue'
-import CreateElectionModal from '@/modules/CreateElectionModal.vue'
+import { reactive, ref } from 'vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
+import { useToast } from 'vue-toastification'
 
-import { Plus, ArrowBigLeft } from 'lucide-vue-next'
+import { useElectionStore } from '@/stores/electionStore'
+import { Plus, ArrowLeft } from 'lucide-vue-next'
 
+const toast = useToast()
+const electionStore = useElectionStore()
 const isModal = ref(false)
 
 const goBack = () => {
   router.back()
+}
+
+const ElectionDetails = reactive({
+  title: '',
+  description: '',
+  start_date: '',
+  end_date: '',
+})
+
+const SubmitElectionDetails = async () => {
+  try {
+    await electionStore.createElection(ElectionDetails)
+    toast.success('Election Created!')
+  } catch (error) {
+    toast.error('Failed to create election')
+  }
 }
 </script>
 
@@ -23,37 +42,34 @@ const goBack = () => {
           @click="goBack"
           class="flex items-center gap-1 text-blue-300 hover:bg-blue-50 mb-4 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
         >
-          <ArrowBigLeft /> Back
+          <ArrowLeft class="w-5 h-5 text-gray-700" /> Back
         </button>
         <h1 class="text-2xl font-bold text-gray-900">Create New Election</h1>
         <p class="mt-1 text-sm text-gray-600 mb-4">Set up a new election for GMSA members</p>
       </div>
       <!-- Form for creating a new election -->
-      <form>
-        <div class="grid grid-cols-1 md:grid-cols-2 md:gap-6">
+      <form @submit.prevent="SubmitElectionDetails">
+        <div class="grid grid-cols-1">
           <div>
             <label for="title" class="block text-sm font-medium text-gray-700"
               >Election Title</label
             >
             <BaseInput
+              v-model="ElectionDetails.title"
               type="text"
               placeholder="e.g., GMSA Executive Elections 2025/2026"
               :required="true"
             />
-          </div>
-
-          <div>
-            <label for="academic_year" class="block text-sm font-medium text-gray-700"
-              >Academic Year</label
-            >
-            <BaseInput type="text" placeholder="2025/2026" :required="true" />
           </div>
         </div>
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700"
             >Description</label
           >
-          <BaseTextArea placeholder="Brief description of the election..." />
+          <BaseTextArea
+            v-model="ElectionDetails.description"
+            placeholder="Brief description of the election..."
+          />
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 md:gap-6">
           <div>
@@ -61,6 +77,7 @@ const goBack = () => {
               >Start Date & Time</label
             >
             <BaseInput
+              v-model="ElectionDetails.start_date"
               type="datetime-local"
               placeholder="e.g., GMSA Executive Elections 2025/2026"
               :required="true"
@@ -71,7 +88,12 @@ const goBack = () => {
             <label for="academic_year" class="block text-sm font-medium text-gray-700"
               >End Date & Time</label
             >
-            <BaseInput type="datetime-local" placeholder="2025/2026" :required="true" />
+            <BaseInput
+              v-model="ElectionDetails.end_date"
+              type="datetime-local"
+              placeholder="2025/2026"
+              :required="true"
+            />
           </div>
         </div>
         <div class="w-full flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
@@ -89,7 +111,6 @@ const goBack = () => {
             Add Position
           </BaseBtn>
         </div>
-        <CreateElectionModal v-if="isModal" @close="isModal = false" />
       </form>
     </div>
   </div>

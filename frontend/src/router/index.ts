@@ -45,9 +45,30 @@ const router = createRouter({
       // props: true
     },
     {
+      path: '/elections/:id/positions/:positionId',
+      name: 'position-detail',
+      component: () => import('../pages/elections/PositionDetail.vue'),
+      // meta: { requiresAuth: true },
+      // props: true
+    },
+    {
+      path: '/voter/elections/:id',
+      name: 'voter-election-detail',
+      component: () => import('../pages/voter/ElectionDetail.vue'),
+      // meta: { requiresAuth: true },
+      // props: true
+    },
+    {
+      path: '/voter/elections/:id/positions/:positionId',
+      name: 'voter-position-detail',
+      component: () => import('../pages/voter/PositionDetail.vue'),
+      // meta: { requiresAuth: true },
+      // props: true
+    },
+    {
       path: '/elections/:id/vote',
       name: 'vote',
-      component: () => import('../pages/elections/VotingInterface.vue'),
+      component: () => import('../pages/elections/VotingBallot.vue'),
       // meta: { requiresAuth: true },
       // props: true
     },

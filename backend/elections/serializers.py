@@ -29,11 +29,10 @@ class CandidateSerializer(serializers.ModelSerializer):
             "order": instance.position.order,
         }
         data["user"] = UserSerializer(instance.user).data
+        return data
 
 
 class PositionSerializer(serializers.ModelSerializer):
-    candidates = CandidateSerializer(many=True, read_only=True)
-    total_votes = serializers.ReadOnlyField()
 
     @extend_schema_field(serializers.IntegerField)
     def get_total_votes(self, obj):
@@ -42,6 +41,20 @@ class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["candidates"] = CandidateSerializer(
+            instance.candidates.all(), many=True
+        ).data
+        data["total_votes"] = instance.total_votes
+        data["election"] = {
+            "id": instance.election.id,
+            "title": instance.election.title,
+            "start_date": instance.election.start_date,
+            "end_date": instance.election.end_date,
+        }
+        return data
 
 
 class ElectionSerializer(serializers.ModelSerializer):

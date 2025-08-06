@@ -1,35 +1,61 @@
 <script setup lang="ts">
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
-import { ArrowBigLeft } from 'lucide-vue-next'
+import { ArrowLeft, Edit, Users, Trash2 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import PositionFormModal from '@/modules/PositionFormModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
 
-// Local state for the election
-const election = ref<any | null>(null)
+const showPositionModal = ref(false)
+const showEditPositionModal = ref(false)
+const editingPosition = ref({})
+const electionId = route.params.id as string
+
+const election = ref<any>(null)
+const positions = computed(() => {
+  // Use positions from the election response if available, otherwise from electionPositions
+  return election.value?.positions || electionStore.electionPositions || []
+})
 
 const goBack = () => {
   router.back()
 }
 
-const fetchElection = async () => {
+const goToPosition = (positionId: string) => {
+  router.push(`/elections/${electionId}/positions/${positionId}`).catch((err) => {
+    // Optionally handle navigation errors here
+    console.error('Navigation error:', err)
+  })
+}
+
+const editPosition = (position: any) => {
+  editingPosition.value = position
+  showPositionModal.value = true
+}
+
+const deletePosition = async (positionId: string) => {
+  if (!confirm('Are you sure you want to delete this position? This will also delete all candidates for this position.')) return
+  
   try {
-    const id = route.params.id as string // Grab ID from URL
-    const data = await electionStore.fetchElectionDetails(id)
-    election.value = data
-    console.log('Fetched election:', data)
+    await electionStore.deletePosition(positionId)
+    // Refresh positions to update the UI
+    await fetchElectionAndPositions()
   } catch (error) {
-    console.error('Failed to fetch election:', error)
+    console.error('Failed to delete position:', error)
   }
 }
 
+const fetchElectionAndPositions = async () => {
+  election.value = await electionStore.fetchElectionDetails(electionId)
+}
+
 onMounted(() => {
-  fetchElection()
+  fetchElectionAndPositions()
 })
 </script>
 
@@ -38,21 +64,24 @@ onMounted(() => {
     <NavBar>
       <template #left>
         <BaseBtn
-          class="flex items-center gap-1 text-blue-300 hover:bg-blue-50 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
+          class="flex items-center gap-1 text-gray-700 hover:bg-gray-100 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
           @click="goBack"
         >
-          <ArrowBigLeft />
+          <ArrowLeft />
         </BaseBtn>
         <h1 class="text-xl font-semibold text-gray-700">Election Details</h1>
       </template>
     </NavBar>
 
     <div v-if="election" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-10 sm:mt-14">
+      <!-- Header -->
       <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-4 justify-between">
-        <h1 class="text-3xl font-bold text-gray-900">{{ election.title }}</h1>
+        <h1 class="text-3xl font-bold text-gray-900">{{ election?.title }}</h1>
         <div class="flex items-center gap-4">
           <BaseBtn
-            class="inline-flex text-sm items-center gap-2 bg-gray-200 border-2 text-gray-700 px-4 py-2 rounded-lg cursor-pointer"
+            class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-green-50 border-2 text-green-700 px-4 py-2 rounded-lg cursor-pointer"
+            @click="showPositionModal = true"
+            v-if="election.status !== 'active' && election.status !== 'completed'"
           >
             Add Position
           </BaseBtn>
@@ -63,52 +92,93 @@ onMounted(() => {
           </BaseBtn>
         </div>
       </div>
-      <p class="text-gray-600 mb-6">{{ election.description }}</p>
 
+      <p class="text-gray-600 mb-6">{{ election?.description }}</p>
+
+      <!-- Stats -->
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm shadow-lg p-6 mb-6 rounded-xl"
       >
         <div>
           <span class="text-gray-500">Start Date:</span>
-          <p class="font-medium">{{ new Date(election.start_date).toLocaleString() }}</p>
+          <p class="font-medium">{{ new Date(election?.start_date).toLocaleString() }}</p>
         </div>
         <div>
           <span class="text-gray-500">End Date:</span>
-          <p class="font-medium">{{ new Date(election.end_date).toLocaleString() }}</p>
+          <p class="font-medium">{{ new Date(election?.end_date).toLocaleString() }}</p>
         </div>
         <div>
           <span class="text-gray-500">Total Positions:</span>
-          <p class="font-medium">{{ election.positions?.length || 0 }}</p>
+          <p class="font-medium">{{ positions.length }}</p>
         </div>
         <div>
           <span class="text-gray-500">Total Votes:</span>
-          <p class="font-medium">{{ election.total_votes || 0 }}</p>
+          <p class="font-medium">{{ election?.total_votes || 0 }}</p>
         </div>
       </div>
 
-      <!-- Positions & Candidates -->
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl">
-        <div class="border border-gray-200 rounded-lg p-4">
-          <div class="flex items-center space-x-4 mb-4">
-            <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-              <span class="text-primary-600 font-medium">A</span>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900">Ahmed Ali</h4>
-              <p class="text-sm text-gray-600">5211040227</p>
-              <p class="text-xs text-gray-500">Level 300 | Computer Science</p>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl" v-if="positions.length">
+        <div
+          v-for="position in positions"
+          :key="position.id"
+          class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer group"
+          @click="goToPosition(position.id)"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition">
+              {{ position.title }}
+            </h3>
+            <div class="flex items-center gap-2 transition">
+              <button
+                @click.stop="editPosition(position)"
+                class="p-1 text-gray-400 hover:text-blue-600 transition cursor-pointer"
+                title="Edit Position"
+              >
+                <Edit class="h-4 w-4" />
+              </button>
+              <button
+                @click.stop="deletePosition(position.id)"
+                class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
+                title="Delete Position"
+              >
+                <Trash2 class="h-4 w-4" />
+              </button>
+              <div class="flex items-center text-gray-400">
+                <Users class="h-4 w-4 mr-1" />
+                <span class="text-xs">{{ position.candidates?.length || 0 }}</span>
+              </div>
             </div>
           </div>
-
-          <div class="mt-3">
-            <h5 class="text-sm font-medium text-gray-900 mb-2">Manifesto:</h5>
-            <p class="text-sm text-gray-600 line-clamp-3">
-              I aim to improve the welfare of GMSA members, enhance collaboration with other
-              organizations, and promote educational excellence.
-            </p>
+          <p class="text-sm text-gray-600 mb-3">
+            {{ position.description || 'No description provided' }}
+          </p>
+          <div class="flex justify-between items-center text-xs text-gray-500">
+            <span>Max Candidates: {{ position.max_candidates || 'N/A' }}</span>
+            <span>Votes: {{ position.total_votes || 0 }}</span>
           </div>
         </div>
+      </div>
+      <div v-else class="text-center py-12 text-gray-500">
+        <User class="h-16 w-16 mx-auto mb-4 text-gray-300" />
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No positions available</h3>
+        <BaseBtn
+          class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer"
+          @click="showPositionModal = true" v-if="election.status !== 'active' && election.status !== 'completed'"
+        >
+          <Plus class="h-4 w-4" />
+          Add First Position
+        </BaseBtn>
       </div>
     </div>
+
+    <PositionFormModal
+      :v-if="showPositionModal"
+      :showModal="showPositionModal"
+      :electionId="electionId"
+      :editingPosition="editingPosition"
+      @close="showPositionModal = false"
+      @save="fetchElectionAndPositions"
+    />
+    
   </div>
 </template>

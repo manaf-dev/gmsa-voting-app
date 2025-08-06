@@ -47,13 +47,12 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('auth_token', response.data.token)
 
       // Set Authorization header
-      apiInstance.defaults.headers.common['Authorization'] = `Token ${response.data.token}`
+      apiInstance.defaults.headers['Authorization'] = `Token ${response.data.token}`
 
       router.push('/dashboard')
       return response.data
     } catch (err: any) {
-      error.value = 'Login failed'
-      return
+      throw err 
     } finally {
       loading.value = false
     }

@@ -56,7 +56,6 @@ class SMSService:
             "is_schedule": False,
             "schedule_date": "",
         }
-        print("payload:", payload)  # Debugging line
 
         try:
             response = requests.post(url, data=payload, timeout=30)
