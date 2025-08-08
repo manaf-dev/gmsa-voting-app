@@ -28,6 +28,7 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     can_vote = models.BooleanField(default=True)
+    changed_password = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.student_id} - {self.get_full_name() or self.username}"
