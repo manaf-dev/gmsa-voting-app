@@ -20,7 +20,17 @@ urlpatterns = [
         UserViewset.as_view({"get": "retrieve_user"}),
         name="retrieve-user",
     ),
+    path(
+        "password/change/",
+        UserViewset.as_view({"post": "change_password"}),
+        name="change-password",
+    ),
     # SMS and admin functions
+    path(
+        "admin/add-user/",
+        UserViewset.as_view({"post": "admin_add_user"}),
+        name="admin-add-user",
+    ),
     path("admin/reset-password/", reset_user_password, name="reset-password"),
     path(
         "admin/send-voting-reminders/",

@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from accounts.serializers import (
+    ChangePasswordSerializer,
     UserSerializer,
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -67,6 +68,42 @@ retrieve_user_schema = extend_schema(
     description="This endpoint retrieves the details of a specific user by their ID.",
     responses={200: UserSerializer},
     tags=["Users"],
+)
+
+change_password_schema = extend_schema(
+    summary="Change user password",
+    description="This endpoint allows a user to change their password.",
+    request=ChangePasswordSerializer,
+    responses={
+        200: inline_serializer(
+            name="ChangePasswordSuccessSerializer",
+            fields={
+                "message": serializers.CharField(),
+            },
+        ),
+    },
+    tags=["Users"],
+)
+
+add_user_schema = extend_schema(
+    summary="Add a new user (Admin/EC only)",
+    description="This endpoint allows EC members and staff to add a new user.",
+    request=inline_serializer(
+        name="AddUserRequestSerializer",
+        fields={
+            "username": serializers.CharField(required=True),
+            "email": serializers.EmailField(required=True),
+            "first_name": serializers.CharField(required=True),
+            "last_name": serializers.CharField(required=True),
+            "student_id": serializers.CharField(required=True),
+            "phone_number": serializers.CharField(required=True),
+            "year_of_study": serializers.CharField(required=True),
+            "program": serializers.CharField(required=True),
+            "admission_year": serializers.CharField(required=True),
+        },
+    ),
+    responses={201: UserSerializer},
+    tags=["Admin"],
 )
 
 reset_user_password_schema = extend_schema(
