@@ -316,6 +316,31 @@ class UserViewset(viewsets.ViewSet):
 
         serializer = UserSerializer(user)
         return Response(serializer.data)
+    
+    @change_password_schema
+    def change_password(self, request):
+        """Change user password"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data["old_password"]):
+                return Response(
+                    {"old_password": ["Wrong password."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.set_password(serializer.validated_data["new_password"])
+            user.changed_password = True
+            user.save()
+            return Response({"message": "Password changed successfully."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class CookieTokenObtainPairView(TokenObtainPairView):
     """
@@ -447,30 +472,7 @@ class JWTLogoutView(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
-    @change_password_schema
-    def change_password(self, request):
-        """Change user password"""
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            user = request.user
-            if not user.check_password(serializer.validated_data["old_password"]):
-                return Response(
-                    {"old_password": ["Wrong password."]},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            user.set_password(serializer.validated_data["new_password"])
-            user.changed_password = True
-            user.save()
-            return Response({"message": "Password changed successfully."})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
 # class MemberListView(generics.ListAPIView):
 #     serializer_class = UserSerializer
 #     permission_classes = [permissions.IsAuthenticated]
