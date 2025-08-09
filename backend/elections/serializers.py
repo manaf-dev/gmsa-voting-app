@@ -151,6 +151,73 @@ class CastVoteSerializer(serializers.Serializer):
         return attrs
 
 
+class SelectionItemSerializer(serializers.Serializer):
+    position_id = serializers.UUIDField()
+    candidate_id = serializers.UUIDField()
+
+
+class BulkCastVoteSerializer(serializers.Serializer):
+    election_id = serializers.UUIDField()
+    selections = SelectionItemSerializer(many=True)
+
+    def validate(self, attrs):
+        election_id = attrs.get("election_id")
+        selections = attrs.get("selections") or []
+
+        # Validate election
+        try:
+            election = Election.objects.get(id=election_id)
+        except Election.DoesNotExist:
+            raise serializers.ValidationError("Invalid election")
+
+        if not election.can_vote:
+            raise serializers.ValidationError("This election is not currently active")
+
+        if not selections:
+            raise serializers.ValidationError("No selections provided")
+
+        # Collect validated objects and enforce constraints
+        validated_items = []
+        seen_positions = set()
+
+        for item in selections:
+            pid = item.get("position_id")
+            cid = item.get("candidate_id")
+
+            try:
+                position = Position.objects.get(id=pid)
+            except Position.DoesNotExist:
+                raise serializers.ValidationError(f"Invalid position: {pid}")
+
+            if position.election_id != election.id:
+                raise serializers.ValidationError(
+                    f"Position {position.id} does not belong to this election"
+                )
+
+            try:
+                candidate = Candidate.objects.get(id=cid, position=position)
+            except Candidate.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Invalid candidate {cid} for position {position.id}"
+                )
+
+            # Only one choice per position (model enforces 1 vote per position)
+            if position.id in seen_positions:
+                raise serializers.ValidationError(
+                    f"Multiple selections for the same position are not allowed ({position.title})"
+                )
+            seen_positions.add(position.id)
+
+            validated_items.append({
+                "position": position,
+                "candidate": candidate,
+            })
+
+        attrs["election"] = election
+        attrs["validated_items"] = validated_items
+        return attrs
+
+
 class ElectionResultSerializer(serializers.ModelSerializer):
     election = ElectionSerializer(read_only=True)
 

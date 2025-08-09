@@ -8,6 +8,7 @@ from elections.serializers import (
     PositionSerializer,
     CandidateSerializer,
     CastVoteSerializer,
+    BulkCastVoteSerializer,
     ElectionResultSerializer,
 )
 
@@ -49,53 +50,52 @@ retrieve_update_delete_election_schema = extend_schema(
 )
 
 cast_vote_schema = extend_schema(
-    summary="Cast vote in an election with enhanced security",
+    summary="Cast votes (single or full ballot) with anonymous encryption",
     description="""
-    Cast a vote for a candidate in a specific position within an election.
-    This endpoint now includes enhanced security features for anonymous voting.
-    
+    Submit your ballot for an election.
+
+    Two modes are supported:
+    1) Bulk ballot (recommended):
+       {
+         "election_id": "<uuid>",
+         "selections": [
+           { "position_id": "<uuid>", "candidate_id": "<uuid>" },
+           ...
+         ]
+       }
+
+    2) Single-position vote (legacy):
+       { "position_id": "<uuid>", "candidate_id": "<uuid>" }
+
     Requirements:
-    - User must have paid dues for the current academic year
     - Election must be active
-    - User cannot vote twice for the same position
     - Candidate must belong to the specified position
-    
+    - Exactly one selection per position (one vote per position)
+    - Voter cannot vote twice for the same position (checked anonymously)
+
     Security Features:
-    - Anonymous storage: No direct links between voter and vote
-    - AES-256 encryption: All vote data is encrypted
-    - Digital signatures: RSA-2048 signatures for authenticity
-    - Audit logging: Comprehensive audit trail
-    - Session tracking: Voting sessions monitored for security
-    - Integrity verification: Cryptographic hash verification
-    
-    Returns success message with vote confirmation and security status.
+    - Anonymous storage: no direct FK links to voter/candidate
+    - Encrypted vote payloads
+    - Digital signatures and integrity hashing
+    - Audit logging and session tracking
     """,
-    request=CastVoteSerializer,
+    request=BulkCastVoteSerializer,
     responses={
         201: inline_serializer(
-            name="VoteSuccessSerializer",
+            name="CastVoteSuccess",
             fields={
                 "message": serializers.CharField(),
-                "vote_id": serializers.UUIDField(),
-                "candidate_name": serializers.CharField(),
-                "position_title": serializers.CharField(),
-                "encrypted": serializers.BooleanField(),
-                "verified": serializers.BooleanField(),
-                "timestamp": serializers.DateTimeField(),
+                # Bulk mode returns count; single mode returns verification/timestamp.
+                "count": serializers.IntegerField(required=False),
+                "verified": serializers.BooleanField(required=False),
+                "timestamp": serializers.DateTimeField(required=False),
             },
         ),
         400: inline_serializer(
-            name="VoteErrorSerializer",
+            name="CastVoteError",
             fields={
                 "error": serializers.CharField(),
                 "details": serializers.CharField(required=False),
-            },
-        ),
-        402: inline_serializer(
-            name="CastVotePaymentRequiredSerializer",
-            fields={
-                "error": serializers.CharField(),
-                "payment_required": serializers.BooleanField(),
             },
         ),
     },

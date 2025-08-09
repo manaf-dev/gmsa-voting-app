@@ -1,4 +1,5 @@
 from rest_framework import generics, status, permissions
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -21,6 +22,7 @@ from .serializers import (
     PositionSerializer,
     CandidateSerializer,
     CastVoteSerializer,
+    BulkCastVoteSerializer,
     ElectionResultSerializer,
 )
 from .crypto import check_security_configuration
@@ -88,7 +90,78 @@ def cast_vote(request):
             {"error": "Cannot participate in this election"},
             status=status.HTTP_403_FORBIDDEN,
         )
+    # Support bulk ballot payload: { election_id, selections: [{position_id, candidate_id}, ...] }
+    if isinstance(request.data, dict) and "selections" in request.data:
+        bulk_ser = BulkCastVoteSerializer(data=request.data)
+        if not bulk_ser.is_valid():
+            return Response(bulk_ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        election = bulk_ser.validated_data["election"]
+        items = bulk_ser.validated_data["validated_items"]
+
+        # Enforce one vote per position per voter (anonymized check), and do all atomically
+        created_votes = []
+        with transaction.atomic():
+            for item in items:
+                position = item["position"]
+                candidate = item["candidate"]
+
+                # Duplicate check per position
+                if Vote.has_voter_voted_for_position(request.user, position):
+                    raise transaction.TransactionManagementError(
+                        f"Already voted for position {position.title}"
+                    )
+
+                v = Vote.create_secure_vote(
+                    voter=request.user,
+                    candidate=candidate,
+                    ip_address=request.META.get("REMOTE_ADDR"),
+                )
+                created_votes.append((v, position, candidate))
+
+            # Audit logs and session update once per election
+            for v, position, candidate in created_votes:
+                AuditLog.objects.create(
+                    action="vote_cast",
+                    user=request.user,
+                    resource_type="vote",
+                    resource_id=str(v.id),
+                    ip_address=request.META.get("REMOTE_ADDR"),
+                    user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                    details={
+                        "election_id": str(position.election.id),
+                        "position_id": str(position.id),
+                        "candidate_id": str(candidate.id),
+                        "encrypted": bool(v.encrypted_vote_data),
+                        "verified": v.integrity_verified,
+                    },
+                )
+
+            # Update or create session for this election
+            try:
+                session = VotingSession.objects.get(
+                    user=request.user, election=election, session_end__isnull=True
+                )
+                session.votes_cast += len(created_votes)
+                session.save()
+            except VotingSession.DoesNotExist:
+                VotingSession.objects.create(
+                    user=request.user,
+                    election=election,
+                    ip_address=request.META.get("REMOTE_ADDR"),
+                    user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                    votes_cast=len(created_votes),
+                )
+
+        return Response(
+            {
+                "message": "Ballot submitted successfully",
+                "count": len(created_votes),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    # Legacy single-position vote support
     serializer = CastVoteSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -96,23 +169,19 @@ def cast_vote(request):
     position = serializer.validated_data["position"]
     candidate = serializer.validated_data["candidate"]
 
-    # Check if user has already voted for this position (anonymously)
     if Vote.has_voter_voted_for_position(request.user, position):
         return Response(
             {"error": "You have already voted for this position"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Create secure vote with encryption and audit logging
     with transaction.atomic():
-        # Always create secure, encrypted vote (model no longer stores voter/candidate FKs)
         vote = Vote.create_secure_vote(
             voter=request.user,
             candidate=candidate,
             ip_address=request.META.get("REMOTE_ADDR"),
         )
 
-        # Create audit log
         AuditLog.objects.create(
             action="vote_cast",
             user=request.user,
@@ -129,7 +198,6 @@ def cast_vote(request):
             },
         )
 
-        # Update voting session
         try:
             session = VotingSession.objects.get(
                 user=request.user, election=position.election, session_end__isnull=True
@@ -137,7 +205,6 @@ def cast_vote(request):
             session.votes_cast += 1
             session.save()
         except VotingSession.DoesNotExist:
-            # Create new session if doesn't exist
             VotingSession.objects.create(
                 user=request.user,
                 election=position.election,
@@ -341,6 +408,7 @@ class PositionDetailView(generics.RetrieveUpdateDestroyAPIView):
 class CandidateListCreateView(generics.ListCreateAPIView):
     serializer_class = CandidateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         position_id = self.kwargs.get("position_id")
