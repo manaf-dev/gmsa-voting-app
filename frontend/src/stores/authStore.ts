@@ -59,11 +59,8 @@ export const useAuthStore = defineStore('auth', () => {
             return null
           }
         }
-        console.log('access', access)
         const claims = access ? parseJwt(access) : null
-        console.log('claims', claims)
         const userId = claims?.user_id || claims?.userId || claims?.uid
-        console.log('userId', userId)
         if (userId) {
           const me = await apiInstance.get(`/accounts/users/${userId}/retrieve/`)
           user.value = me.data
