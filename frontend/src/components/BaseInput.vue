@@ -5,7 +5,7 @@ const props = defineProps<{
   type: string
   placeholder?: string
   required?: boolean
-  modelValue?: string
+  modelValue?: any
 }>()
 
 const emit = defineEmits<{
@@ -25,6 +25,6 @@ const updateValue = (e: Event) => {
     :required="props.required"
     :value="props.modelValue"
     @input="updateValue"
-    class="py-2 px-4 mt-1 mb-4 rounded-lg border-2 border-gray-300 focus:border-green-500 outline-none w-full"
+    class="py-2 px-4 mt-1 mb-4 rounded-lg border-2 border-gray-300 focus:border-green-500 outline-none w-full block max-w-sm"
   />
 </template>

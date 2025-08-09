@@ -14,13 +14,12 @@ Usage:
 """
 
 import csv
-import string
-import secrets
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import AcademicYear
 from utils.sms_service import send_welcome_sms
+from utils.helpers import _generate_password
 
 User = get_user_model()
 
@@ -152,7 +151,7 @@ class Command(BaseCommand):
 
                     # Generate password if not provided
                     if not password:
-                        password = self._generate_password()
+                        password = _generate_password()
 
                     # Generate email if not provided
                     if not email:
@@ -229,7 +228,7 @@ class Command(BaseCommand):
 
             for user, username, password in users_to_send_sms:
                 try:
-                    result = send_welcome_sms(user, username, password, async_send=True)
+                    result = send_welcome_sms(user, password, async_send=True)
                     if result["success"]:
                         stats["sms_sent"] += 1
                         self.stdout.write(
@@ -285,11 +284,10 @@ class Command(BaseCommand):
 
         # Try different username patterns
         patterns = [
-            f"{first_clean}.{last_clean}",
-            f"{first_clean}{last_clean}",
-            f"{first_clean}.{last_clean}.{student_id[-4:]}",
-            f"{first_clean[0]}{last_clean}",
-            f"{first_clean}{last_clean[0]}",
+            f"{first_clean}{last_clean[:2]}",
+            f"{first_clean}_{last_clean[:2]}",
+            f"{first_clean}.{last_clean[:2]}",
+            f"{first_clean}{last_clean[:3]}",
             f"user{student_id}",
         ]
 
@@ -304,9 +302,3 @@ class Command(BaseCommand):
             counter += 1
 
         return f"{base_username}{counter}"
-
-    def _generate_password(self, length: int = 10) -> str:
-        """Generate a secure random password"""
-        # Use letters, digits, and some safe punctuation
-        characters = string.ascii_letters + string.digits + "!@#$%^&*"
-        return "".join(secrets.choice(characters) for _ in range(length))

@@ -71,7 +71,7 @@ const SubmitElectionDetails = async () => {
         />
       </label>
 
-      <div class="grid grid-cols-1 md:grid-cols-2">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <label class="block text-sm font-medium text-gray-700">
           Start Date & Time
           <BaseInput v-model="ElectionDetails.start_date" type="datetime-local" required />

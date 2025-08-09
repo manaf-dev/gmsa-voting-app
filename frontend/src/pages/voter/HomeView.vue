@@ -65,14 +65,8 @@ const navigateToAuth = (route: string) => {
           </div>
 
           <div class="flex items-center space-x-4">
-            <template>
-              <button class="btn btn-outline px-4 py-2">Login</button>
-              <button @click="navigateToAuth('/register')" class="btn btn-primary px-4 py-2">
-                Register
-              </button>
-            </template>
-            <template>
-              <router-link to="/dashboard" class="btn btn-primary px-4 py-2">
+              <router-link to="/login" class="btn btn-outline px-4 py-2">Login</router-link>
+              <!-- <router-link to="/dashboard" class="btn btn-primary px-4 py-2">
                 Dashboard
               </router-link>
               <button
@@ -80,8 +74,7 @@ const navigateToAuth = (route: string) => {
                 class="btn btn-outline px-4 py-2"
               >
                 Logout
-              </button>
-            </template>
+              </button> -->
           </div>
 
           <!-- <template v-else>

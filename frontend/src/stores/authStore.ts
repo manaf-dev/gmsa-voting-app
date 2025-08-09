@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await apiInstance.post('/accounts/register/', UserDetails)
-      router.push('/login') 
+      
       return response.data
     } catch (err: any) {
       error.value = 'Registration failed'
@@ -76,8 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
       router.push('/dashboard')
       return response.data
     } catch (err: any) {
-      error.value = 'Login failed'
-      return
+      throw err 
     } finally {
       loading.value = false
     }

@@ -56,7 +56,6 @@ class SMSService:
             "is_schedule": False,
             "schedule_date": "",
         }
-        print("payload:", payload)  # Debugging line
 
         try:
             response = requests.post(url, data=payload, timeout=30)
@@ -271,9 +270,7 @@ def get_sms_service() -> SMSService:
 
 
 # Convenience functions for common SMS operations
-def send_welcome_sms(
-    user, username: str, password: str, async_send: bool = True
-) -> Dict:
+def send_welcome_sms(user, password: str, async_send: bool = True) -> Dict:
     """
     Send welcome SMS to new user
 
@@ -283,11 +280,19 @@ def send_welcome_sms(
         password: Generated password
         async_send: Whether to send via Celery task (default True)
     """
+
+    user_data = {
+        "username": user.username,
+        "password": password,
+        "student_id": user.student_id,
+        "first_name": user.first_name or user.username,
+    }
+
     if async_send:
         # Import here to avoid circular imports
         from utils.tasks import send_welcome_sms_task
 
-        task = send_welcome_sms_task.delay(user.id, username, password)
+        task = send_welcome_sms_task.delay(user.id, user_data)
         return {
             "success": True,
             "task_id": task.id,
@@ -296,13 +301,6 @@ def send_welcome_sms(
 
     # Synchronous sending
     sms_service = get_sms_service()
-
-    user_data = {
-        "username": username,
-        "password": password,
-        "student_id": user.student_id,
-        "first_name": user.first_name or user.username,
-    }
 
     message = SMSMessageTemplates.welcome_new_user(user_data)
     return sms_service.send_single_sms(user.phone_number, message)

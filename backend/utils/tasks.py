@@ -10,6 +10,7 @@ This module contains all async tasks including:
 import logging
 from datetime import timedelta
 from typing import List, Dict, Any
+import uuid
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -77,9 +78,7 @@ def send_bulk_sms_task(self, recipients: List[Dict[str, str]]) -> Dict[str, Any]
 
 
 @shared_task(bind=True, max_retries=3)
-def send_welcome_sms_task(
-    self, user_id: int, username: str, password: str
-) -> Dict[str, Any]:
+def send_welcome_sms_task(self, user_id: str, user_data: dict) -> Dict[str, Any]:
     """
     Send welcome SMS to new user (async)
 
@@ -93,13 +92,6 @@ def send_welcome_sms_task(
     """
     try:
         user = User.objects.get(id=user_id)
-
-        user_data = {
-            "username": username,
-            "password": password,
-            "student_id": user.student_id,
-            "first_name": user.first_name or user.username,
-        }
 
         message = SMSMessageTemplates.welcome_new_user(user_data)
         sms_service = SMSService()

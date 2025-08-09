@@ -1,9 +1,6 @@
 import csv
 from io import StringIO
-import secrets
-import select
-import string
-from rest_framework import status, generics, permissions, viewsets
+from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -22,9 +19,9 @@ from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
     UserSerializer,
-    AcademicYearSerializer,
+    ChangePasswordSerializer,
 )
-from .selectors import get_all_users, get_user_by_id
+from accounts.selectors import get_all_users, get_user_by_id
 from docs.accounts import (
     register_user_schema,
     bulk_registration_schema,
@@ -32,7 +29,10 @@ from docs.accounts import (
     retrieve_user_schema,
     reset_user_password_schema,
     send_voting_reminders_schema,
+    add_user_schema,
+    change_password_schema,
 )
+from utils.helpers import _generate_password
 
 
 @reset_user_password_schema
@@ -73,51 +73,34 @@ def reset_user_password(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Generate new password
-    import secrets
-    import string
-
-    characters = string.ascii_letters + string.digits + "!@#$%^&*"
-    new_password = "".join(secrets.choice(characters) for _ in range(10))
+    new_password = _generate_password()
 
     # Set new password
     user.set_password(new_password)
+    user.changed_password = False
     user.save()
 
     # Send SMS notification
     try:
         from utils.sms_service import send_password_reset_sms
 
-        sms_result = send_password_reset_sms(user, new_password, async_send=True)
+        send_password_reset_sms(user, new_password, async_send=True)
 
-        if sms_result["success"]:
-            return Response(
-                {
-                    "message": f"Password reset successful for {user.student_id}",
-                    # "sms_queued": True,
-                    # "task_id": sms_result.get("task_id"),
-                    "new_password": new_password,  # Return for admin reference
-                    "phone_number": user.phone_number,
-                }
-            )
-        else:
-            return Response(
-                {
-                    "message": f"Password reset successful for {user.student_id}",
-                    # "sms_queued": False,
-                    # "sms_error": sms_result.get("error"),
-                    "new_password": new_password,  # Return for admin reference
-                    "phone_number": user.phone_number,
-                }
-            )
+        return Response(
+            {
+                "message": f"Password reset successful for {user.student_id}",
+                "new_password": new_password,
+                "phone_number": user.phone_number,
+                "sms_queued": True,
+            }
+        )
     except Exception as e:
         return Response(
             {
                 "message": f"Password reset successful for {user.student_id}",
-                # "sms_queued": False,
-                # "sms_error": str(e),
-                "new_password": new_password,  # Return for admin reference
+                "new_password": new_password,
                 "phone_number": user.phone_number,
+                "sms_queued": False,
             }
         )
 
@@ -198,21 +181,35 @@ def send_voting_reminders(request):
 class UserViewset(viewsets.ViewSet):
     """Viewset for user operations"""
 
-    def _generate_random_password(self, length=10):
-        """Generate a random password with letters, digits, and punctuation."""
-        characters = string.ascii_letters + string.digits + string.punctuation
-        return "".join(secrets.choice(characters) for _ in range(length))
-
     @register_user_schema
     def register_user(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response(
                 {"detail": "Registration successful"},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @add_user_schema
+    def admin_add_user(self, user_data):
+        """Admin function to add a user with generated credentials and send SMS notification."""
+        user_data["password"] = user_data["confirm_password"] = _generate_password()
+
+        serializer = UserRegistrationSerializer(data=user_data)
+        if serializer.is_valid():
+            user = serializer.save()
+            # Send SMS notification
+            try:
+                from utils.sms_service import send_welcome_sms
+
+                send_welcome_sms(user, user_data["password"], async_send=True)
+            except Exception as e:
+                return {"error": str(e)}
+            return {"user": user, "message": "User registered successfully"}
+        else:
+            return {"error": serializer.errors}
 
     @bulk_registration_schema
     def bulk_registration(self, request):
@@ -247,9 +244,7 @@ class UserViewset(viewsets.ViewSet):
 
             for row in reader:
                 # generate password
-                row["password"] = row["confirm_password"] = (
-                    self._generate_random_password()
-                )
+                row["password"] = row["confirm_password"] = _generate_password()
                 serializer = UserRegistrationSerializer(data=row)
                 if serializer.is_valid():
                     user = serializer.save()
@@ -451,6 +446,29 @@ class JWTLogoutView(APIView):
             )
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+    @change_password_schema
+    def change_password(self, request):
+        """Change user password"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data["old_password"]):
+                return Response(
+                    {"old_password": ["Wrong password."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.set_password(serializer.validated_data["new_password"])
+            user.changed_password = True
+            user.save()
+            return Response({"message": "Password changed successfully."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # class MemberListView(generics.ListAPIView):

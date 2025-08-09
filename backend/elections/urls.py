@@ -32,7 +32,7 @@ urlpatterns = [
         name="candidate-list-create",
     ),
     path(
-        "candidates/<uuid:pk>/",
+        "candidates/<int:pk>/",
         views.CandidateDetailView.as_view(),
         name="candidate-detail",
     ),

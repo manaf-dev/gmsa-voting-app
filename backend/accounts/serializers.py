@@ -96,12 +96,15 @@ class UserSerializer(serializers.ModelSerializer):
         return representation
 
 
-# class UserProfileSerializer(serializers.ModelSerializer):
-#     user = UserSerializer(read_only=True)
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+    confirm_password = serializers.CharField(required=True)
 
-#     class Meta:
-#         model = UserProfile
-#         fields = "__all__"
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("New passwords don't match")
+        return attrs
 
 
 class AcademicYearSerializer(serializers.ModelSerializer):
