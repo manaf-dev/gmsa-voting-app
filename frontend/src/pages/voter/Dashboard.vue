@@ -5,7 +5,7 @@ import BaseBtn from '@/components/BaseBtn.vue'
 
 import { useAuthStore } from '@/stores/authStore'
 import { useElectionStore } from '@/stores/electionStore'
-import { CheckCircle, Clock, DollarSign, FileText, LogOut, Settings, User, Calendar, Users } from 'lucide-vue-next'
+import { DollarSign, LogOut, Settings, User, Calendar } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const electionStore = useElectionStore()
@@ -144,15 +144,17 @@ onBeforeUnmount(() => {
             <h3 class="text-lg font-medium text-gray-900 text-center">Active Elections</h3>
           </div>
           <div v-if="loading" class="p-6 text-center">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+            <div
+              class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"
+            ></div>
             <p class="mt-2 text-sm text-gray-500">Loading elections...</p>
           </div>
           <div v-else-if="activeElections.length === 0" class="p-6 text-center text-gray-500">
             No active elections
           </div>
           <div v-else class="p-4 space-y-3">
-            <div 
-              v-for="election in activeElections" 
+            <div
+              v-for="election in activeElections"
               :key="election.id"
               class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all"
             >
@@ -161,24 +163,26 @@ onBeforeUnmount(() => {
                   <h4 class="font-semibold text-gray-900 text-lg">{{ election.title }}</h4>
                   <p class="text-sm text-gray-600 mt-1">{{ election.description }}</p>
                 </div>
-                
+
                 <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                   <span class="flex items-center gap-1">
                     <Calendar class="h-3 w-3" />
                     Started {{ new Date(election.start_date).toLocaleDateString() }}
                   </span>
-                  <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">Active</span>
+                  <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium"
+                    >Active</span
+                  >
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                  <router-link 
+                  <router-link
                     :to="`/elections/${election.id}/vote`"
                     class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
                     🗳️ Cast Your Vote
                   </router-link>
-                  <router-link 
+                  <router-link
                     :to="`/voter/elections/${election.id}`"
                     class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
@@ -196,15 +200,17 @@ onBeforeUnmount(() => {
             <h3 class="text-lg font-medium text-gray-900 text-center">Upcoming Elections</h3>
           </div>
           <div v-if="loading" class="p-6 text-center">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+            <div
+              class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"
+            ></div>
             <p class="mt-2 text-sm text-gray-500">Loading elections...</p>
           </div>
           <div v-else-if="upcomingElections.length === 0" class="p-6 text-center text-gray-500">
             No upcoming elections
           </div>
           <div v-else class="p-4 space-y-3">
-            <div 
-              v-for="election in upcomingElections" 
+            <div
+              v-for="election in upcomingElections"
               :key="election.id"
               class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all"
             >
@@ -213,18 +219,20 @@ onBeforeUnmount(() => {
                   <h4 class="font-semibold text-gray-900 text-lg">{{ election.title }}</h4>
                   <p class="text-sm text-gray-600 mt-1">{{ election.description }}</p>
                 </div>
-                
+
                 <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                   <span class="flex items-center gap-1">
                     <Calendar class="h-3 w-3" />
                     Starts {{ new Date(election.start_date).toLocaleDateString() }}
                   </span>
-                  <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Upcoming</span>
+                  <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium"
+                    >Upcoming</span
+                  >
                 </div>
 
                 <!-- Action Button -->
                 <div class="pt-2">
-                  <router-link 
+                  <router-link
                     :to="`/voter/elections/${election.id}`"
                     class="block w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
