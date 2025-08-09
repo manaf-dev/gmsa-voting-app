@@ -46,6 +46,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_extensions",
     "drf_spectacular",
@@ -57,11 +58,14 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # "elections.middleware.SecureHeadersMiddleware",  # Security headers
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "elections.middleware.SecurityMiddleware",  # Rate limiting and audit logging
+    "elections.middleware.VotingSessionMiddleware",  # Session tracking
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -167,7 +171,10 @@ AUTHENTICATION_BACKENDS = [
 # REST Framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+    # Keep TokenAuthentication during transition
+    "rest_framework.authentication.TokenAuthentication",
+    # Add JWT authentication
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
@@ -176,6 +183,25 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+# SimpleJWT configuration
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    # For cookie strategy on refresh endpoints
+    "ALGORITHM": "HS256",
+}
+
+# Cookie names for refresh strategy (used by custom views)
+JWT_REFRESH_COOKIE_NAME = "refresh_token"
+JWT_ACCESS_COOKIE_NAME = "access_token"
+JWT_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
+JWT_COOKIE_SAMESITE = "Lax"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "GMSA Voting System API",
@@ -263,3 +289,89 @@ CELERY_TASK_QUEUES = {
         "routing_key": "sms",
     },
 }
+
+# =============================================================================
+# VOTING SECURITY CONFIGURATION
+# =============================================================================
+
+# Cryptographic keys (should be stored securely in production)
+VOTING_ENCRYPTION_KEY = config("VOTING_ENCRYPTION_KEY", default="")
+VOTE_HASH_SECRET = config("VOTE_HASH_SECRET", default="voting-hash-secret-key-2024")
+VOTER_ANONYMIZATION_SALT = config(
+    "VOTER_ANONYMIZATION_SALT", default="gmsa-voter-salt-2024"
+)
+
+# Security settings
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool
+)
+SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=False, cast=bool)
+
+# Session security
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = 3600  # 1 hour
+
+# CSRF protection
+CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=False, cast=bool)
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# IP whitelisting for sensitive operations
+WHITELISTED_IPS = config(
+    "WHITELISTED_IPS",
+    default="",
+    cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
+)
+
+# Rate limiting (using cache)
+CACHES = {
+    "default": {
+    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
+        "KEY_PREFIX": "gmsa_voting",
+        "TIMEOUT": 300,  # 5 minutes default
+    },
+    # Local in-memory fallback cache for when Redis is unavailable
+    "local": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "gmsa-voting-local",
+        "TIMEOUT": 300,
+    },
+}
+
+# Voting security defaults
+VOTING_SECURITY_DEFAULTS = {
+    "ENABLE_VOTE_ENCRYPTION": True,
+    "ENABLE_DIGITAL_SIGNATURES": True,
+    "ENABLE_AUDIT_LOGGING": True,
+    "ENABLE_IP_VERIFICATION": True,
+    "MAX_VOTES_PER_MINUTE": 5,
+    "MAX_LOGIN_ATTEMPTS": 3,
+    "SESSION_TIMEOUT_MINUTES": 30,
+    "REQUIRE_HTTPS_FOR_VOTING": True,
+}
+
+# Audit logging configuration
+AUDIT_LOG_RETENTION_DAYS = config("AUDIT_LOG_RETENTION_DAYS", default=365, cast=int)
+ENABLE_DETAILED_AUDIT_LOGGING = config(
+    "ENABLE_DETAILED_AUDIT_LOGGING", default=True, cast=bool
+)
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'", "'unsafe-inline'"]
+CSP_STYLE_SRC = ["'self'", "'unsafe-inline'"]
+CSP_IMG_SRC = ["'self'", "data:", "https:"]
+CSP_CONNECT_SRC = ["'self'"]
+CSP_FONT_SRC = ["'self'"]
+CSP_FRAME_ANCESTORS = ["'none'"]
+
+# Security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = "DENY"

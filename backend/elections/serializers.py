@@ -5,16 +5,6 @@ from accounts.serializers import UserSerializer
 
 
 class CandidateSerializer(serializers.ModelSerializer):
-    vote_count = serializers.ReadOnlyField()
-    vote_percentage = serializers.ReadOnlyField()
-
-    @extend_schema_field(serializers.IntegerField)
-    def get_vote_count(self, obj):
-        return obj.vote_count
-
-    @extend_schema_field(serializers.FloatField)
-    def get_vote_percentage(self, obj):
-        return obj.vote_percentage
 
     class Meta:
         model = Candidate
@@ -29,6 +19,8 @@ class CandidateSerializer(serializers.ModelSerializer):
             "order": instance.position.order,
         }
         data["user"] = UserSerializer(instance.user).data
+        data["vote_count"] = instance.vote_count
+        data["vote_percentage"] = instance.vote_percentage
         return data
 
 
@@ -48,12 +40,6 @@ class PositionSerializer(serializers.ModelSerializer):
             instance.candidates.all(), many=True
         ).data
         data["total_votes"] = instance.total_votes
-        data["election"] = {
-            "id": instance.election.id,
-            "title": instance.election.title,
-            "start_date": instance.election.start_date,
-            "end_date": instance.election.end_date,
-        }
         return data
 
 
@@ -143,8 +129,8 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class CastVoteSerializer(serializers.Serializer):
-    position_id = serializers.IntegerField()
-    candidate_id = serializers.IntegerField()
+    position_id = serializers.UUIDField()
+    candidate_id = serializers.UUIDField()
 
     def validate(self, attrs):
         position_id = attrs.get("position_id")
@@ -162,6 +148,73 @@ class CastVoteSerializer(serializers.Serializer):
 
         attrs["position"] = position
         attrs["candidate"] = candidate
+        return attrs
+
+
+class SelectionItemSerializer(serializers.Serializer):
+    position_id = serializers.UUIDField()
+    candidate_id = serializers.UUIDField()
+
+
+class BulkCastVoteSerializer(serializers.Serializer):
+    election_id = serializers.UUIDField()
+    selections = SelectionItemSerializer(many=True)
+
+    def validate(self, attrs):
+        election_id = attrs.get("election_id")
+        selections = attrs.get("selections") or []
+
+        # Validate election
+        try:
+            election = Election.objects.get(id=election_id)
+        except Election.DoesNotExist:
+            raise serializers.ValidationError("Invalid election")
+
+        if not election.can_vote:
+            raise serializers.ValidationError("This election is not currently active")
+
+        if not selections:
+            raise serializers.ValidationError("No selections provided")
+
+        # Collect validated objects and enforce constraints
+        validated_items = []
+        seen_positions = set()
+
+        for item in selections:
+            pid = item.get("position_id")
+            cid = item.get("candidate_id")
+
+            try:
+                position = Position.objects.get(id=pid)
+            except Position.DoesNotExist:
+                raise serializers.ValidationError(f"Invalid position: {pid}")
+
+            if position.election_id != election.id:
+                raise serializers.ValidationError(
+                    f"Position {position.id} does not belong to this election"
+                )
+
+            try:
+                candidate = Candidate.objects.get(id=cid, position=position)
+            except Candidate.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Invalid candidate {cid} for position {position.id}"
+                )
+
+            # Only one choice per position (model enforces 1 vote per position)
+            if position.id in seen_positions:
+                raise serializers.ValidationError(
+                    f"Multiple selections for the same position are not allowed ({position.title})"
+                )
+            seen_positions.add(position.id)
+
+            validated_items.append({
+                "position": position,
+                "candidate": candidate,
+            })
+
+        attrs["election"] = election
+        attrs["validated_items"] = validated_items
         return attrs
 
 

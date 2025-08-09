@@ -12,18 +12,14 @@ export const useElectionStore = defineStore('election', () => {
 
   const availableElections = ref<any[]>([]) 
   const specificElection = ref<any | null>(null)
-  const electionPositions = ref<any[]>([]) // ✅ store positions separately
-  const availableUsers = ref<any[]>([]) // ✅ store users for candidate selection
+  const electionPositions = ref<any[]>([]) 
+  const availableUsers = ref<any[]>([]) 
 
   // Create Election
   async function createElection(ElectionDetails: object) {
     loading.value = true
     try {
-      const response = await apiInstance.post('/elections/', ElectionDetails, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.post('/elections/', ElectionDetails, )
       return response.data
     } catch (err: any) {
       error.value = 'Failed to create election'
@@ -33,7 +29,7 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Create Position and auto-refresh positions
+  
   async function createPosition(electionId: string, PositionDetails: object) {
     loading.value = true
     try {
@@ -41,11 +37,7 @@ export const useElectionStore = defineStore('election', () => {
       const response = await apiInstance.post(
         `/elections/${electionId}/positions/`,
         PositionDetails,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
       return response.data
@@ -57,7 +49,7 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Update Position and auto-refresh positions
+  
   async function updatePosition(positionId: string, PositionDetails: object) {
     loading.value = true
     try {
@@ -65,11 +57,7 @@ export const useElectionStore = defineStore('election', () => {
       const response = await apiInstance.put(
         `/elections/positions/${positionId}/`,
         PositionDetails,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
       return response.data
@@ -81,17 +69,13 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Delete Position and auto-refresh positions
+  
   async function deletePosition(positionId: string) {
     loading.value = true
     try {
       await apiInstance.delete(
         `/elections/positions/${positionId}/`,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
       return true
@@ -107,11 +91,7 @@ export const useElectionStore = defineStore('election', () => {
   async function retrieveElections() {
     loading.value = true
     try {
-      const response = await apiInstance.get('/elections/', {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get('/elections/', )
 
       availableElections.value = response.data.results || []
       return availableElections.value
@@ -123,15 +103,11 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Retrieve positions for a specific election
+  
   async function fetchPositions(electionId: string) {
     loading.value = true
     try {
-      const response = await apiInstance.get(`/elections/${electionId}/positions/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get(`/elections/${electionId}/positions/`, )
 
       electionPositions.value = response.data.results || []
       return electionPositions.value
@@ -146,11 +122,7 @@ export const useElectionStore = defineStore('election', () => {
   async function retrievePosition(positionId: string) {
     loading.value = true
     try {
-      const response = await apiInstance.get(`/elections/positions/${positionId}/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get(`/elections/positions/${positionId}/`, )
 
       return response.data
     } catch (err: any) {
@@ -161,21 +133,17 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Create Candidate
+  
   async function createCandidate(positionId: string, candidateDetails: object) {
     loading.value = true
     try {
       const response = await apiInstance.post(
         `/elections/positions/${positionId}/candidates/`,
         candidateDetails,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
-      // ✅ Refresh positions to update candidates
+      
       const electionId = specificElection.value?.id
       if (electionId) {
         await retrievePosition(electionId)
@@ -193,11 +161,7 @@ export const useElectionStore = defineStore('election', () => {
   async function fetchCandidates(positionId: string) {
     loading.value = true
     try {
-      const response = await apiInstance.get(`/elections/positions/${positionId}/candidates/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get(`/elections/positions/${positionId}/candidates/`, )
 
       return response.data
     } catch (err: any) {
@@ -211,11 +175,7 @@ export const useElectionStore = defineStore('election', () => {
   async function retrieveCandidate(candidateId: string) {
     loading.value = true
     try {
-      const response = await apiInstance.get(`/elections/candidates/${candidateId}/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get(`/elections/candidates/${candidateId}/`, )
 
       return response.data
     } catch (err: any) {
@@ -226,21 +186,17 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Update Candidate
+  
   async function updateCandidate(candidateId: string, candidateDetails: object) {
     loading.value = true
     try {
       const response = await apiInstance.put(
         `/elections/candidates/${candidateId}/`,
         candidateDetails,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
-      // ✅ Refresh positions to update candidates
+      
       const electionId = specificElection.value?.id
       if (electionId) {
         await retrievePosition(electionId)
@@ -255,20 +211,16 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Delete Candidate
+  
   async function deleteCandidate(positionId: string, candidateId: string) {
     loading.value = true
     try {
       await apiInstance.delete(
         `/elections/positions/${positionId}/candidates/${candidateId}/`,
-        {
-          headers: {
-            Authorization: `Token ${localStorage.getItem('auth_token')}`,
-          },
-        }
+        
       )
 
-      // ✅ Refresh positions to update candidates
+      
       const electionId = specificElection.value?.id
       if (electionId) {
         await retrievePosition(electionId)
@@ -283,17 +235,12 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
-  // ✅ Fetch all users for candidate selection
+ 
   async function fetchUsers(search?: string) {
     loading.value = true
     try {
       const params = search ? { search } : {}
-      const response = await apiInstance.get('/accounts/users/', {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-        params
-      })
+      const response = await apiInstance.get('/accounts/users/', { params })
 
       availableUsers.value = response.data.results || response.data || []
       return availableUsers.value
@@ -310,11 +257,7 @@ export const useElectionStore = defineStore('election', () => {
   async function fetchElectionDetails(id: string) {
     loading.value = true
     try {
-      const response = await apiInstance.get(`/elections/${id}/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem('auth_token')}`,
-        },
-      })
+      const response = await apiInstance.get(`/elections/${id}/`, )
 
       return response.data
     } catch (err: any) {
@@ -333,18 +276,18 @@ export const useElectionStore = defineStore('election', () => {
     electionPositions,
     availableUsers,
     createElection,
-    createPosition,       // ✅ auto refreshes positions
-    updatePosition,       // ✅ auto refreshes positions
-    deletePosition,       // ✅ auto refreshes positions
-    createCandidate,      // ✅ auto refreshes positions
-    fetchCandidates,      // ✅ for candidate selection
-    retrieveCandidate,    // ✅ for candidate selection
-    updateCandidate,      // ✅ auto refreshes positions  
-    deleteCandidate,      // ✅ auto refreshes positions
+    createPosition,       
+    updatePosition,       
+    deletePosition,       
+    createCandidate,      
+    fetchCandidates,      
+    retrieveCandidate,    
+    updateCandidate,      
+    deleteCandidate,      
     retrieveElections,
     retrievePosition,
-    fetchPositions,       // ✅ for election positions
+    fetchPositions,       
     fetchElectionDetails,
-    fetchUsers,           // ✅ for candidate selection
+    fetchUsers,           
   }
 })

@@ -7,14 +7,11 @@ export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
 
   const user = ref<any>(JSON.parse(localStorage.getItem('auth_user') || 'null'))
-  const token = ref<string | null>(localStorage.getItem('auth_token'))
+  const token = ref<string | null>(null) // store access in-memory only
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Restore Authorization header if token exists
-  if (token.value) {
-    apiInstance.defaults.headers.common['Authorization'] = `Token ${token.value}`
-  }
+  // No token restoration from localStorage; refresh cookie handles session longevity
 
   async function register(UserDetails: object) {
     loading.value = true
@@ -37,17 +34,41 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await apiInstance.post('/accounts/login/', UserDetails)
+      // New JWT login endpoint (sets refresh cookie, returns access)
+      const response = await apiInstance.post('/accounts/jwt/login/', UserDetails)
+      const access = response.data?.access
+      if (access) {
+        token.value = access
+        apiInstance.defaults.headers.common['Authorization'] = `Bearer ${access}`
+      }
 
-      // Save user and token
-      user.value = response.data.user
-      token.value = response.data.token
-
-      localStorage.setItem('auth_user', JSON.stringify(response.data.user))
-      localStorage.setItem('auth_token', response.data.token)
-
-      // Set Authorization header
-      apiInstance.defaults.headers['Authorization'] = `Token ${response.data.token}`
+      // Fetch user profile after login using user_id from JWT claims
+      try {
+        const parseJwt = (t: string) => {
+          try {
+            const base64Url = t.split('.')[1]
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+            )
+            return JSON.parse(jsonPayload)
+          } catch {
+            return null
+          }
+        }
+        const claims = access ? parseJwt(access) : null
+        const userId = claims?.user_id || claims?.userId || claims?.uid
+        if (userId) {
+          const me = await apiInstance.get(`/accounts/users/${userId}/retrieve/`)
+          user.value = me.data
+          localStorage.setItem('auth_user', JSON.stringify(user.value))
+        }
+      } catch {
+        // ignore
+      }
 
       router.push('/dashboard')
       return response.data
@@ -64,10 +85,12 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Clear local storage
     localStorage.removeItem('auth_user')
-    localStorage.removeItem('auth_token')
 
     // Remove token from API headers
     delete apiInstance.defaults.headers.common['Authorization']
+
+    // Call backend to clear/blacklist refresh cookie
+    apiInstance.post('/accounts/jwt/logout/', {}).catch(() => {})
 
     router.push('/login')
   }

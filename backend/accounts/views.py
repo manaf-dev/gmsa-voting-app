@@ -5,8 +5,17 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
-from accounts.models import User
-from accounts.serializers import (
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import User, AcademicYear
+from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
     UserSerializer,
@@ -289,6 +298,143 @@ class UserViewset(viewsets.ViewSet):
         users = get_all_users()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
+
+    def retrieve_user(self, request, user_id):
+        """Retrieve a user by ID"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        user = get_user_by_id(user_id)
+        if not user:
+            return Response(
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    """
+    Issue access/refresh tokens and set the refresh token in an HttpOnly cookie.
+
+    Response body will only include the access token and user info can be fetched separately.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = TokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Pull tokens
+        access = data.get("access")
+        refresh = data.get("refresh")
+
+        # Build response with only access token
+        response = Response({"access": access}, status=status.HTTP_200_OK)
+
+        # Set refresh cookie
+        if refresh:
+            cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+            cookie_secure = getattr(settings, "JWT_COOKIE_SECURE", False)
+            cookie_samesite = getattr(settings, "JWT_COOKIE_SAMESITE", "Lax")
+            # Compute cookie max_age from SIMPLE_JWT setting
+            refresh_lifetime = settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME")
+            max_age = int(refresh_lifetime.total_seconds()) if refresh_lifetime else None
+            response.set_cookie(
+                cookie_name,
+                refresh,
+                max_age=max_age,
+                httponly=True,
+                secure=cookie_secure,
+                samesite=cookie_samesite,
+                path="/",
+            )
+
+        return response
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Refresh access (and rotated refresh) using the refresh token stored in an HttpOnly cookie.
+
+    If a rotated refresh is returned, update the cookie. Response body includes only the access token.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = TokenRefreshSerializer
+
+    def post(self, request, *args, **kwargs):
+        cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        provided_refresh = request.data.get("refresh") if hasattr(request, "data") else None
+        cookie_refresh = request.COOKIES.get(cookie_name)
+
+        data = {"refresh": provided_refresh or cookie_refresh}
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        validated = serializer.validated_data
+
+        access = validated.get("access")
+        new_refresh = validated.get("refresh")
+
+        response = Response({"access": access}, status=status.HTTP_200_OK)
+
+        # If rotation is enabled and a new refresh is issued, update cookie
+        if new_refresh:
+            cookie_secure = getattr(settings, "JWT_COOKIE_SECURE", False)
+            cookie_samesite = getattr(settings, "JWT_COOKIE_SAMESITE", "Lax")
+            refresh_lifetime = settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME")
+            max_age = int(refresh_lifetime.total_seconds()) if refresh_lifetime else None
+            response.set_cookie(
+                cookie_name,
+                new_refresh,
+                max_age=max_age,
+                httponly=True,
+                secure=cookie_secure,
+                samesite=cookie_samesite,
+                path="/",
+            )
+
+        return response
+
+
+class JWTLogoutView(APIView):
+    """
+    Blacklist the refresh token (from cookie or request body) and clear the cookie.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        token = request.data.get("refresh") if hasattr(request, "data") else None
+        token = token or request.COOKIES.get(cookie_name)
+
+        response = Response({"detail": "Logged out"}, status=status.HTTP_200_OK)
+
+        # Clear cookie regardless of blacklist success
+        response.delete_cookie(cookie_name, path="/")
+
+        if token:
+            try:
+                refresh = RefreshToken(token)
+                # Blacklist if app is enabled
+                try:
+                    refresh.blacklist()
+                except Exception:
+                    # Blacklist not configured or token already blacklisted
+                    pass
+            except Exception:
+                # Invalid token; still return 200 after clearing cookie
+                pass
+
+        return response
 
     @retrieve_user_schema
     def retrieve_user(self, request, user_id):

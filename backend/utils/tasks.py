@@ -256,3 +256,35 @@ def send_daily_voting_reminders(self) -> Dict[str, Any]:
     except Exception as exc:
         logger.error(f"Daily voting reminders task failed: {str(exc)}")
         return {"success": False, "error": str(exc)}
+
+
+# Periodic task to manage election lifecycle based on start/end times
+@shared_task(bind=True)
+def update_election_statuses(self) -> Dict[str, Any]:
+    """
+    Activate elections when start time is reached and mark as completed when end time passes.
+    Runs periodically via Celery Beat.
+    """
+    try:
+        from elections.models import Election
+
+        now = timezone.now()
+
+        # Activate elections that are scheduled to start
+        to_activate = Election.objects.filter(status="upcoming", start_date__lte=now)
+        activated = to_activate.update(status="active") if to_activate.exists() else 0
+
+        # Complete elections that have ended
+        to_complete = Election.objects.filter(status="active", end_date__lt=now)
+        completed = to_complete.update(status="completed") if to_complete.exists() else 0
+
+        if activated or completed:
+            logger.info(
+                f"Election status update: activated={activated}, completed={completed}"
+            )
+
+        return {"success": True, "activated": activated, "completed": completed}
+
+    except Exception as exc:
+        logger.error(f"update_election_statuses failed: {str(exc)}")
+        return {"success": False, "error": str(exc)}

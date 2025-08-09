@@ -31,10 +31,16 @@ app.autodiscover_tasks()
 # Celery beat schedule for periodic tasks
 app.conf.beat_schedule = {
     # Send voting reminders daily at 9 AM
-    "send-daily-voting-reminders": {
-        "task": "utils.tasks.send_daily_voting_reminders",
-        "schedule": 60.0 * 60.0 * 24.0,  # Every 24 hours
-        "options": {"queue": "sms_queue"},
+    # "send-daily-voting-reminders": {
+    #     "task": "utils.tasks.send_daily_voting_reminders",
+    #     "schedule": 60.0 * 60.0 * 24.0,  # Every 24 hours
+    #     "options": {"queue": "sms_queue"},
+    # },
+    # Update election statuses every minute
+    "update-election-statuses": {
+        "task": "utils.tasks.update_election_statuses",
+        "schedule": 60.0,
+        "options": {"queue": "default"},
     },
 }
 
@@ -44,7 +50,6 @@ app.conf.task_routes = {
     "utils.tasks.send_bulk_sms_task": {"queue": "sms_queue"},
     "utils.tasks.send_welcome_sms_task": {"queue": "sms_queue"},
     "utils.tasks.send_password_reset_sms_task": {"queue": "sms_queue"},
-    "utils.tasks.send_voting_reminder_task": {"queue": "sms_queue"},
 }
 
 

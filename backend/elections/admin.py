@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Election, Position, Candidate, Vote, ElectionResult
+from .models import Election, Position, Candidate, Vote, ElectionResult, VotingSession, AuditLog, ElectionSecurity
 
 
 class PositionInline(admin.TabularInline):
@@ -45,10 +45,30 @@ class CandidateAdmin(admin.ModelAdmin):
 
 @admin.register(Vote)
 class VoteAdmin(admin.ModelAdmin):
-    list_display = ("voter", "candidate", "timestamp")
-    list_filter = ("candidate__position__election", "timestamp")
-    search_fields = ("voter__username", "candidate__name")
-    readonly_fields = ("id", "voter", "candidate", "timestamp", "ip_address")
+    list_display = (
+        "id",
+        "election_id",
+        "position_id",
+        "anonymous_voter_token",
+        "timestamp",
+        "integrity_verified",
+        "signature_verified",
+    )
+    list_filter = ("timestamp", "integrity_verified", "signature_verified")
+    search_fields = ("anonymous_voter_token", "election_id")
+    readonly_fields = (
+        "id",
+        "election_id",
+        "position_id",
+        "timestamp",
+        "ip_address",
+        "encrypted_vote_data",
+        "vote_hash",
+        "digital_signature",
+        "anonymous_voter_token",
+        "integrity_verified",
+        "signature_verified",
+    )
 
 
 @admin.register(ElectionResult)
@@ -61,3 +81,32 @@ class ElectionResultAdmin(admin.ModelAdmin):
         "generated_at",
     )
     readonly_fields = ("generated_at",)
+
+
+@admin.register(VotingSession)
+class VotingSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "session_start",
+        "session_end",
+    )
+    readonly_fields = ("session_start", "session_end")
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "action",
+        "timestamp",
+    )
+    readonly_fields = ("timestamp",)
+
+@admin.register(ElectionSecurity)
+class ElectionSecurityAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "election",
+    )

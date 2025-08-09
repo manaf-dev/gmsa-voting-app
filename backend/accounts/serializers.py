@@ -59,6 +59,8 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    active_elections_vote_status = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -76,7 +78,15 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "can_vote",
+            "active_elections_vote_status",
         )
+
+    def get_active_elections_vote_status(self, obj) -> dict:
+        try:
+            from elections.models import Vote
+            return Vote.get_user_active_election_vote_map(obj)
+        except Exception:
+            return {}
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

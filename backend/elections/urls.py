@@ -5,8 +5,7 @@ urlpatterns = [
     # Election URLs
     path("", views.ElectionListCreateView.as_view(), name="election-list-create"),
     path("<uuid:pk>/", views.ElectionDetailView.as_view(), name="election-detail"),
-    path("<uuid:election_id>/vote/", views.cast_vote, name="cast-vote"),
-    path("<uuid:election_id>/my-votes/", views.user_votes, name="user-votes"),
+    path("vote/", views.cast_vote, name="cast-vote"),
     path(
         "<uuid:election_id>/results/", views.election_results, name="election-results"
     ),
@@ -45,5 +44,22 @@ urlpatterns = [
         "admin/members/<int:member_id>/reminder/",
         views.send_reminder,
         name="send-reminder",
+    ),
+    # Security URLs
+    path(
+        "<uuid:election_id>/security-status/",
+        views.security_status,
+        name="security-status",
+    ),
+    path(
+        "votes/<uuid:vote_id>/verify/",
+        views.verify_vote_integrity,
+        name="verify-vote-integrity",
+    ),
+    path("<uuid:election_id>/audit-trail/", views.audit_trail, name="audit-trail"),
+    path(
+        "admin/suspicious-activity/",
+        views.suspicious_activity,
+        name="suspicious-activity",
     ),
 ]
