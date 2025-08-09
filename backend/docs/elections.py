@@ -299,7 +299,7 @@ list_create_candidates_schema = extend_schema(
     parameters=[
         OpenApiParameter(
             name="position_id",
-            type=OpenApiTypes.INT,
+            type=OpenApiTypes.UUID,
             location=OpenApiParameter.PATH,
             description="The ID of the position",
         ),

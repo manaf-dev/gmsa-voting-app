@@ -64,6 +64,7 @@ class Election(models.Model):
 
 
 class Position(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     election = models.ForeignKey(
         Election, on_delete=models.CASCADE, related_name="positions"
     )
@@ -86,6 +87,7 @@ class Position(models.Model):
 
 
 class Candidate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     position = models.ForeignKey(
         Position, on_delete=models.CASCADE, related_name="candidates"
     )
@@ -125,10 +127,11 @@ class Candidate(models.Model):
 
         for vote in votes_for_position:
             try:
+
                 vote_data = crypto.decrypt_vote_data(vote.encrypted_vote_data)
                 if vote_data.get("candidate_id") == str(self.id):
                     count += 1
-            except Exception:
+            except Exception as e:
                 # Skip corrupted votes
                 continue
 
@@ -150,19 +153,25 @@ class Vote(models.Model):
     # candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name="votes")
 
     # Metadata (only what's absolutely necessary for operations)
-    election_id = models.UUIDField()  # Reference to election (needed for queries)
-    position_id = models.IntegerField()  # Reference to position (needed for validation)
+    election_id = models.UUIDField(
+        default=uuid.uuid4
+    )  # Reference to election (needed for queries)
+    position_id = models.UUIDField(
+        default=uuid.uuid4
+    )  # Reference to position (needed for validation)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     # All sensitive data is now encrypted
-    encrypted_vote_data = (
-        models.TextField()
+    encrypted_vote_data = models.TextField(
+        null=True, blank=True
     )  # Contains voter_id, candidate_id, and other details
-    vote_hash = models.CharField(max_length=64)  # Cryptographic hash for integrity
-    digital_signature = models.TextField()  # Digital signature
+    vote_hash = models.CharField(
+        max_length=64, null=True, blank=True
+    )  # Cryptographic hash for integrity
+    digital_signature = models.TextField(null=True, blank=True)  # Digital signature
     anonymous_voter_token = models.CharField(
-        max_length=32, unique=True
+        max_length=32, unique=True, null=True, blank=True
     )  # Anonymized voter ID
 
     # Verification status
@@ -185,7 +194,8 @@ class Vote(models.Model):
         ]
 
     def __str__(self):
-        return f"Anonymous vote {self.id[:8]} in election {self.election_id}"
+        short_id = str(self.id)[:8]
+        return f"Anonymous vote {short_id} in election {self.election_id}"
 
     @classmethod
     def create_secure_vote(cls, voter, candidate, ip_address=None):
@@ -232,7 +242,7 @@ class Vote(models.Model):
 
         # Create anonymous voter token (allows checking for duplicate votes without revealing identity)
         anonymous_token = crypto.anonymize_voter_data(
-            str(voter.id), str(candidate.position.election.id)
+            str(voter.id), str(candidate.position.election.id), str(candidate.position.id)
         )
 
         # Check if this voter has already voted for this position
@@ -269,7 +279,7 @@ class Vote(models.Model):
         crypto = VotingCrypto()
 
         anonymous_token = crypto.anonymize_voter_data(
-            str(voter.id), str(position.election.id)
+            str(voter.id), str(position.election.id), str(position.id)
         )
 
         return cls.objects.filter(
@@ -394,6 +404,51 @@ class Vote(models.Model):
         except Exception:
             pass
         return None
+
+    
+    @classmethod
+    def get_user_active_election_vote_map(cls, voter) -> dict:
+        """Return a mapping {election_id (str): bool} for all active elections
+        indicating whether the user has at least one vote in each.
+        Uses anonymous tokens derived from (voter_id, election_id, position_id).
+        """
+        from .crypto import VotingCrypto
+
+        # Collect all active positions (position_id, election_id)
+        active_positions = list(
+            Position.objects.filter(election__status="active").values_list("id", "election_id")
+        )
+        if not active_positions:
+            return {}
+
+        # Initialize mapping with False
+        election_ids = [eid for (_pid, eid) in active_positions]
+        vote_map = {str(eid): False for eid in set(election_ids)}
+
+        crypto = VotingCrypto()
+        position_ids = []
+        tokens = []
+        for position_id, election_id in active_positions:
+            position_ids.append(position_id)
+            tokens.append(
+                crypto.anonymize_voter_data(
+                    str(voter.id), str(election_id), str(position_id)
+                )
+            )
+
+        # Single query to find any matching votes and which elections they belong to
+        matched_election_ids = (
+            cls.objects.filter(
+                position_id__in=position_ids, anonymous_voter_token__in=tokens
+            )
+            .values_list("election_id", flat=True)
+            .distinct()
+        )
+
+        for eid in matched_election_ids:
+            vote_map[str(eid)] = True
+
+        return vote_map
 
 
 class ElectionResult(models.Model):
@@ -537,7 +592,7 @@ class VotingSession(models.Model):
         ]
 
     def __str__(self):
-        return f"Voting session {self.id[:8]} for {self.user} in {self.election.title}"
+        return f"Voting session {self.id} for {self.user} in {self.election.title}"
 
     def mark_suspicious(self, reason):
         """Mark session as suspicious with reason"""

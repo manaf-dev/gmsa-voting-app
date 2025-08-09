@@ -25,13 +25,42 @@ class VotingCrypto:
         self.cipher_suite = Fernet(self.symmetric_key)
 
     def _get_or_generate_symmetric_key(self) -> bytes:
-        """Get symmetric encryption key from settings or generate new one"""
+        """Get symmetric encryption key from settings or generate new one.
+        Accepts either a base64 urlsafe Fernet key (recommended) or a raw 32-byte key
+        and converts it to base64. Falls back to generating a new key if invalid.
+        """
         key_setting = getattr(settings, "VOTING_ENCRYPTION_KEY", None)
         if key_setting:
-            return base64.urlsafe_b64decode(key_setting.encode())
-        else:
-            # Generate new key (should be stored securely in production)
-            return Fernet.generate_key()
+            # Normalize to bytes
+            key_bytes = (
+                key_setting if isinstance(key_setting, (bytes, bytearray)) else str(key_setting).encode()
+            )
+
+            # Case 1: Already a base64-urlsafe Fernet key that decodes to 32 bytes
+            try:
+                decoded = base64.urlsafe_b64decode(key_bytes)
+                if len(decoded) == 32:
+                    return key_bytes
+            except Exception:
+                pass
+
+            # Case 2: Provided a raw 32-byte key -> encode to base64
+            if len(key_bytes) == 32:
+                return base64.urlsafe_b64encode(key_bytes)
+
+            # Case 3: Provided a hex string of 64 chars -> convert to bytes then base64
+            try:
+                if len(key_bytes) == 64 and all(chr(c) in b"0123456789abcdefABCDEF" for c in key_bytes):
+                    raw = bytes.fromhex(key_bytes.decode())
+                    if len(raw) == 32:
+                        return base64.urlsafe_b64encode(raw)
+            except Exception:
+                pass
+
+            # If we reach here, the provided key is invalid; fall through to generate
+
+        # Generate new key (should be persisted in production)
+        return Fernet.generate_key()
 
     def encrypt_vote_data(self, vote_data: Dict) -> str:
         """
@@ -60,7 +89,6 @@ class VotingCrypto:
             encrypted_bytes = base64.urlsafe_b64decode(encrypted_data.encode())
             decrypted_data = self.cipher_suite.decrypt(encrypted_bytes)
             enhanced_data = json.loads(decrypted_data.decode())
-
             return enhanced_data["vote_data"]
         except Exception as e:
             raise ValueError(f"Failed to decrypt vote data: {str(e)}")
@@ -109,14 +137,13 @@ class VotingCrypto:
         # Use constant-time comparison to prevent timing attacks
         return hmac.compare_digest(vote_hash, expected_hash)
 
-    def anonymize_voter_data(self, voter_id: str, election_id: str) -> str:
+    def anonymize_voter_data(self, voter_id: str, election_id: str, position_id: str) -> str:
         """
         Create anonymous voter token for privacy
         """
         # Combine voter ID with election ID and secret salt
         salt = getattr(settings, "VOTER_ANONYMIZATION_SALT", "default-salt")
-        combined_data = f"{voter_id}:{election_id}:{salt}"
-
+        combined_data = f"{voter_id}:{election_id}:{position_id}:{salt}"
         # Create irreversible hash
         anonymous_token = hashlib.sha256(combined_data.encode()).hexdigest()[:16]
 

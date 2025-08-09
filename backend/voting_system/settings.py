@@ -46,6 +46,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_extensions",
     "drf_spectacular",
@@ -57,7 +58,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "elections.middleware.SecureHeadersMiddleware",  # Security headers
+    # "elections.middleware.SecureHeadersMiddleware",  # Security headers
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -170,7 +171,10 @@ AUTHENTICATION_BACKENDS = [
 # REST Framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+    # Keep TokenAuthentication during transition
+    "rest_framework.authentication.TokenAuthentication",
+    # Add JWT authentication
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
@@ -179,6 +183,25 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+# SimpleJWT configuration
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    # For cookie strategy on refresh endpoints
+    "ALGORITHM": "HS256",
+}
+
+# Cookie names for refresh strategy (used by custom views)
+JWT_REFRESH_COOKIE_NAME = "refresh_token"
+JWT_ACCESS_COOKIE_NAME = "access_token"
+JWT_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
+JWT_COOKIE_SAMESITE = "Lax"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "GMSA Voting System API",
@@ -308,14 +331,17 @@ WHITELISTED_IPS = config(
 # Rate limiting (using cache)
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
         "KEY_PREFIX": "gmsa_voting",
         "TIMEOUT": 300,  # 5 minutes default
-    }
+    },
+    # Local in-memory fallback cache for when Redis is unavailable
+    "local": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "gmsa-voting-local",
+        "TIMEOUT": 300,
+    },
 }
 
 # Voting security defaults

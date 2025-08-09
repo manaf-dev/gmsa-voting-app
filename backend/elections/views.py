@@ -28,7 +28,6 @@ from docs.elections import (
     list_create_elections_schema,
     retrieve_update_delete_election_schema,
     cast_vote_schema,
-    user_votes_schema,
     election_results_schema,
     generate_results_schema,
     list_create_positions_schema,
@@ -86,8 +85,8 @@ class ElectionDetailView(generics.RetrieveUpdateDestroyAPIView):
 def cast_vote(request):
     if not request.user.can_vote:
         return Response(
-            {"error": "You must pay your dues to vote", "payment_required": True},
-            status=status.HTTP_402_PAYMENT_REQUIRED,
+            {"error": "Cannot participate in this election"},
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     serializer = CastVoteSerializer(data=request.data)
@@ -97,12 +96,8 @@ def cast_vote(request):
     position = serializer.validated_data["position"]
     candidate = serializer.validated_data["candidate"]
 
-    # Check if user has already voted for this position
-    existing_vote = Vote.objects.filter(
-        voter=request.user, candidate__position=position
-    ).first()
-
-    if existing_vote:
+    # Check if user has already voted for this position (anonymously)
+    if Vote.has_voter_voted_for_position(request.user, position):
         return Response(
             {"error": "You have already voted for this position"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -110,21 +105,12 @@ def cast_vote(request):
 
     # Create secure vote with encryption and audit logging
     with transaction.atomic():
-        # Create secure vote with encryption
-        use_secure_voting = getattr(position.election, "security", None)
-        if use_secure_voting and use_secure_voting.enable_vote_encryption:
-            vote = Vote.create_secure_vote(
-                voter=request.user,
-                candidate=candidate,
-                ip_address=request.META.get("REMOTE_ADDR"),
-            )
-        else:
-            # Traditional vote for backwards compatibility
-            vote = Vote.objects.create(
-                voter=request.user,
-                candidate=candidate,
-                ip_address=request.META.get("REMOTE_ADDR"),
-            )
+        # Always create secure, encrypted vote (model no longer stores voter/candidate FKs)
+        vote = Vote.create_secure_vote(
+            voter=request.user,
+            candidate=candidate,
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
 
         # Create audit log
         AuditLog.objects.create(
@@ -162,61 +148,14 @@ def cast_vote(request):
 
     return Response(
         {
-            "message": "Vote cast successfully with enhanced security",
-            "vote_id": str(vote.id),
-            "candidate_name": (
-                candidate.user.display_name if candidate.user else "Unknown"
-            ),
-            "position_title": position.title,
-            "encrypted": bool(vote.encrypted_vote_data),
+            "message": "Vote cast successfully",
             "verified": vote.integrity_verified,
             "timestamp": vote.timestamp,
         },
         status=status.HTTP_201_CREATED,
     )
 
-
-@user_votes_schema
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def user_votes(request, election_id):
-    election = get_object_or_404(Election, id=election_id)
-
-    if not request.user.can_vote:
-        return Response(
-            {
-                "error": "You must pay your dues to view voting information",
-                "payment_required": True,
-            },
-            status=status.HTTP_402_PAYMENT_REQUIRED,
-        )
-
-    votes = Vote.objects.filter(
-        voter=request.user, candidate__position__election=election
-    ).select_related("candidate__position")
-
-    voted_positions = []
-    for vote in votes:
-        voted_positions.append(
-            {
-                "position_id": vote.candidate.position.id,
-                "position_title": vote.candidate.position.title,
-                "candidate_id": vote.candidate.id,
-                "candidate_name": vote.candidate.name,
-                "timestamp": vote.timestamp,
-            }
-        )
-
-    return Response(
-        {
-            "election_id": str(election.id),
-            "election_title": election.title,
-            "voted_positions": voted_positions,
-            "can_still_vote": election.can_vote,
-        }
-    )
-
-
+import secrets
 @election_results_schema
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
@@ -241,8 +180,8 @@ def election_results(request, election_id):
             candidates_with_votes.append(
                 {
                     "id": candidate.id,
-                    "name": candidate.name,
-                    "student_id": candidate.student_id,
+                    "name": candidate.user.display_name,
+                    "student_id": candidate.user.student_id,
                     "vote_count": candidate.vote_count,
                     "vote_percentage": candidate.vote_percentage,
                 }
@@ -289,9 +228,7 @@ def generate_election_results(request, election_id):
     # Calculate results
     from accounts.models import User
 
-    total_eligible_voters = User.objects.filter(
-        has_paid_dues=True, is_active=True
-    ).count()
+    total_eligible_voters = User.objects.filter(is_active=True).count()
     total_votes_cast = election.total_votes
     voter_turnout = (
         (election.total_voters / total_eligible_voters * 100)
@@ -535,22 +472,13 @@ def admin_stats(request):
     if not (request.user.is_ec_member or request.user.is_staff):
         raise permissions.PermissionDenied("Only EC members can access admin stats")
 
-    from django.db.models import Count, Sum
+    # Intentionally minimal; add more aggregates as needed
 
     stats = {
         "total_elections": Election.objects.count(),
         "active_elections": Election.objects.filter(status="active").count(),
         "upcoming_elections": Election.objects.filter(status="upcoming").count(),
         "completed_elections": Election.objects.filter(status="completed").count(),
-        "total_votes_cast": Vote.objects.count(),
-        "total_positions": Position.objects.count(),
-        "total_candidates": Candidate.objects.count(),
-        "elections_by_status": dict(
-            Election.objects.values("status")
-            .annotate(count=Count("id"))
-            .values_list("status", "count")
-        ),
-        "recent_activity": [],  # Can be implemented based on requirements
     }
 
     return Response(stats)
@@ -568,19 +496,12 @@ def admin_members(request):
     from accounts.serializers import UserSerializer
 
     # Get query parameters
-    dues_status = request.GET.get("dues_status")
-    academic_year = request.GET.get("academic_year")
+    # Reserved for future filters
     year_of_study = request.GET.get("year_of_study")
     search = request.GET.get("search")
 
     # Start with all users
     queryset = User.objects.all()
-
-    # Apply filters
-    if dues_status == "paid":
-        queryset = queryset.filter(has_paid_dues=True)
-    elif dues_status == "unpaid":
-        queryset = queryset.filter(has_paid_dues=False)
 
     if year_of_study:
         queryset = queryset.filter(year_of_study=year_of_study)
@@ -735,16 +656,14 @@ def security_status(request, election_id):
     config_checks = check_security_configuration()
 
     # Get voting statistics
-    total_votes = Vote.objects.filter(candidate__position__election=election).count()
+    total_votes = Vote.objects.filter(election_id=election.id).count()
     secure_votes = (
-        Vote.objects.filter(
-            candidate__position__election=election, encrypted_vote_data__isnull=False
-        )
+        Vote.objects.filter(election_id=election.id)
         .exclude(encrypted_vote_data="")
         .count()
     )
     verified_votes = Vote.objects.filter(
-        candidate__position__election=election,
+        election_id=election.id,
         integrity_verified=True,
         signature_verified=True,
     ).count()

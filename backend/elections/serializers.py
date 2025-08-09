@@ -5,16 +5,6 @@ from accounts.serializers import UserSerializer
 
 
 class CandidateSerializer(serializers.ModelSerializer):
-    vote_count = serializers.ReadOnlyField()
-    vote_percentage = serializers.ReadOnlyField()
-
-    @extend_schema_field(serializers.IntegerField)
-    def get_vote_count(self, obj):
-        return obj.vote_count
-
-    @extend_schema_field(serializers.FloatField)
-    def get_vote_percentage(self, obj):
-        return obj.vote_percentage
 
     class Meta:
         model = Candidate
@@ -29,11 +19,12 @@ class CandidateSerializer(serializers.ModelSerializer):
             "order": instance.position.order,
         }
         data["user"] = UserSerializer(instance.user).data
+        data["vote_count"] = instance.vote_count
+        data["vote_percentage"] = instance.vote_percentage
+        return data
 
 
 class PositionSerializer(serializers.ModelSerializer):
-    candidates = CandidateSerializer(many=True, read_only=True)
-    total_votes = serializers.ReadOnlyField()
 
     @extend_schema_field(serializers.IntegerField)
     def get_total_votes(self, obj):
@@ -42,6 +33,14 @@ class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["candidates"] = CandidateSerializer(
+            instance.candidates.all(), many=True
+        ).data
+        data["total_votes"] = instance.total_votes
+        return data
 
 
 class ElectionSerializer(serializers.ModelSerializer):
@@ -130,8 +129,8 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class CastVoteSerializer(serializers.Serializer):
-    position_id = serializers.IntegerField()
-    candidate_id = serializers.IntegerField()
+    position_id = serializers.UUIDField()
+    candidate_id = serializers.UUIDField()
 
     def validate(self, attrs):
         position_id = attrs.get("position_id")

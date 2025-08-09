@@ -5,7 +5,7 @@ Security middleware for voting system
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.conf import settings
 from .models import AuditLog, VotingSession
 from .crypto import create_audit_entry
@@ -73,13 +73,22 @@ class SecurityMiddleware(MiddlewareMixin):
         """Check rate limit for specific key and endpoint"""
 
         cache_key = f"rate_limit:{endpoint}:{key}"
-        current_requests = cache.get(cache_key, 0)
+        try:
+            current_requests = cache.get(cache_key, 0)
+        except Exception:
+            # Fallback to local memory cache if default cache (Redis) is unavailable
+            local_cache = caches.get("local")
+            current_requests = local_cache.get(cache_key, 0)
 
         if current_requests >= max_requests:
             return True
 
         # Increment counter
-        cache.set(cache_key, current_requests + 1, window)
+        try:
+            cache.set(cache_key, current_requests + 1, window)
+        except Exception:
+            local_cache = caches.get("local")
+            local_cache.set(cache_key, current_requests + 1, window)
         return False
 
     def _requires_ip_whitelist(self, request):

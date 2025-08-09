@@ -4,6 +4,7 @@ from .views import (
     reset_user_password,
     send_voting_reminders,
 )
+from .views import CookieTokenObtainPairView, CookieTokenRefreshView, JWTLogoutView
 
 urlpatterns = [
     path("register/", UserViewset.as_view({"post": "register_user"}), name="register"),
@@ -27,4 +28,8 @@ urlpatterns = [
         send_voting_reminders,
         name="send-voting-reminders",
     ),
+    # JWT endpoints
+    path("jwt/login/", CookieTokenObtainPairView.as_view(), name="jwt-login"),
+    path("jwt/refresh/", CookieTokenRefreshView.as_view(), name="jwt-refresh"),
+    path("jwt/logout/", JWTLogoutView.as_view(), name="jwt-logout"),
 ]
