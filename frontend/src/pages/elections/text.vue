@@ -142,16 +142,7 @@
 import { ArrowLeft, AlertTriangle } from 'lucide-vue-next'
 </script>
 
-{
-  "id": "ef530d88-b30a-4964-8f01-5db5f655c323",
-  "title": "Omnis aut modi offic",
-  "description": "Rerum ducimus iusto",
-  "start_date": "1983-09-09T11:20:00Z",
-  "end_date": "1974-04-12T22:28:00Z",
-  "status": "upcoming",
-  "total_votes": 0,
-  "total_voters": 0,
-  "is_active": false,
-  "created_by_name": "Inventore nesciunt Autem ut expedita in",
-  "created_at": "2025-08-01T21:38:47.798675Z"
-}
+{ "id": "ef530d88-b30a-4964-8f01-5db5f655c323", "title": "Omnis aut modi offic", "description":
+"Rerum ducimus iusto", "start_date": "1983-09-09T11:20:00Z", "end_date": "1974-04-12T22:28:00Z",
+"status": "upcoming", "total_votes": 0, "total_voters": 0, "is_active": false, "created_by_name":
+"Inventore nesciunt Autem ut expedita in", "created_at": "2025-08-01T21:38:47.798675Z" }
