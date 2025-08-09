@@ -77,7 +77,10 @@ class SecurityMiddleware(MiddlewareMixin):
             current_requests = cache.get(cache_key, 0)
         except Exception:
             # Fallback to local memory cache if default cache (Redis) is unavailable
-            local_cache = caches.get("local")
+            try:
+                local_cache = caches["local"]
+            except Exception:
+                local_cache = cache
             current_requests = local_cache.get(cache_key, 0)
 
         if current_requests >= max_requests:
@@ -87,7 +90,10 @@ class SecurityMiddleware(MiddlewareMixin):
         try:
             cache.set(cache_key, current_requests + 1, window)
         except Exception:
-            local_cache = caches.get("local")
+            try:
+                local_cache = caches["local"]
+            except Exception:
+                local_cache = cache
             local_cache.set(cache_key, current_requests + 1, window)
         return False
 
