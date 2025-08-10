@@ -105,6 +105,7 @@ def cast_vote(request):
             for item in items:
                 position = item["position"]
                 candidate = item["candidate"]
+                approve = item.get("approve", True)
 
                 # Duplicate check per position
                 if Vote.has_voter_voted_for_position(request.user, position):
@@ -116,11 +117,12 @@ def cast_vote(request):
                     voter=request.user,
                     candidate=candidate,
                     ip_address=request.META.get("REMOTE_ADDR"),
+                    approve=approve,
                 )
-                created_votes.append((v, position, candidate))
+                created_votes.append((v, position, candidate, approve))
 
             # Audit logs and session update once per election
-            for v, position, candidate in created_votes:
+            for v, position, candidate, approve in created_votes:
                 AuditLog.objects.create(
                     action="vote_cast",
                     user=request.user,
@@ -132,6 +134,7 @@ def cast_vote(request):
                         "election_id": str(position.election.id),
                         "position_id": str(position.id),
                         "candidate_id": str(candidate.id),
+                        "approve": bool(approve),
                         "encrypted": bool(v.encrypted_vote_data),
                         "verified": v.integrity_verified,
                     },
@@ -254,6 +257,23 @@ def election_results(request, election_id):
                 }
             )
 
+        # If single-candidate position, compute yes/no breakdown
+        yes_count = 0
+        no_count = 0
+        if position.candidates.count() == 1:
+            # Iterate all votes for this position and inspect approve flag
+            from .crypto import VotingCrypto
+            crypto = VotingCrypto()
+            for v in Vote.objects.filter(position_id=position.id):
+                try:
+                    data = crypto.decrypt_vote_data(v.encrypted_vote_data)
+                    if data.get("approve") is False:
+                        no_count += 1
+                    else:
+                        yes_count += 1
+                except Exception:
+                    continue
+
         # Sort by vote count descending
         candidates_with_votes.sort(key=lambda x: x["vote_count"], reverse=True)
 
@@ -263,6 +283,7 @@ def election_results(request, election_id):
                 "title": position.title,
                 "total_votes": position.total_votes,
                 "candidates": candidates_with_votes,
+                **({"yes_count": yes_count, "no_count": no_count} if position.candidates.count() == 1 else {}),
             }
         )
 
