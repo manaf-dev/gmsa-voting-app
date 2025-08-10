@@ -16,12 +16,16 @@ import {
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
+import { useAuthStore } from '@/stores/authStore'
 import BaseBtn from '@/components/BaseBtn.vue'
 import ManifestoModal from '@/components/ManifestoModal.vue'
+import { useToast } from 'vue-toastification'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
+const authStore = useAuthStore()
+const toast = useToast()
 
 const electionId = route.params.id as string
 const currentElection = ref<any>(null)
@@ -123,18 +127,50 @@ const backToVoting = () => {
 const submitVotes = async () => {
   try {
     loading.value = true
-    
-    // Here you would implement the actual vote submission
-    // For now, we'll simulate success
-    console.log('Submitting votes:', votes.value)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    error.value = null
+
+  // Build selections payload. For single-candidate positions, send approve flag (true/false)
+  const selections: Array<{ position_id: string; candidate_id?: string; approve?: boolean }> = []
+
+    for (const pos of positions.value) {
+      const vote = votes.value[pos.id]
+      if (vote === undefined) continue
+      if (pos.candidates?.length === 1) {
+        if (vote === true) {
+          selections.push({ position_id: pos.id, approve: true })
+        } else if (vote === false) {
+          selections.push({ position_id: pos.id, approve: false })
+        }
+      } else {
+        if (typeof vote === 'string') {
+          selections.push({ position_id: pos.id, candidate_id: vote })
+        }
+      }
+    }
+
+    if (selections.length === 0) {
+      toast.error('Please make at least one valid selection before submitting.')
+      return
+    }
+
+    const resp = await electionStore.submitBallot(electionId, selections)
+    toast.success('Ballot submitted successfully!')
     hasVoted.value = true
-  } catch (err) {
-    console.error('Error submitting votes:', err)
-    error.value = 'Failed to submit votes. Please try again.'
+
+    // Refresh user profile so active_elections_vote_status updates in UI badges
+    try {
+      const saved = localStorage.getItem('auth_user')
+      const prev = saved ? JSON.parse(saved) : null
+      const userId = prev?.id
+      if (userId) {
+        const me = await (await import('@/services/api')).default.get(`/accounts/users/${userId}/retrieve/`)
+        authStore.user = me.data
+        localStorage.setItem('auth_user', JSON.stringify(authStore.user))
+      }
+    } catch {}
+  } catch (err: any) {
+    console.error('Error submitting votes:', err?.response?.data || err)
+    toast.error(err?.response?.data?.error || 'Failed to submit votes. Please try again.')
   } finally {
     loading.value = false
   }
@@ -223,18 +259,12 @@ onMounted(() => {
         <h2 class="text-2xl font-semibold text-gray-900 mb-2">Vote Submitted Successfully!</h2>
         <p class="text-gray-600 mb-4 text-sm">Thank you for participating in this election.</p>
         <div class="flex item-center gap-2 md:gap-4 w-max mx-auto">
-          <BaseBtn
-            @click="goBack"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <ArrowBigLeft class="h-5 w-5 mr-2" />
-            Back to Dashboard
-          </BaseBtn>
+          
           <router-link
             to="/dashboard"
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
           >
-            View Elections
+            Back to Home
           </router-link>
         </div>
       </div>

@@ -268,6 +268,28 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
+  // Submit full ballot (bulk selections) in one request
+  async function submitBallot(
+    electionId: string,
+    selections: Array<{ position_id: string; candidate_id?: string; approve?: boolean }>
+  ) {
+    loading.value = true
+    try {
+      const payload = {
+        election_id: electionId,
+        selections,
+      }
+      const response = await apiInstance.post('/elections/vote/', payload)
+      return response.data
+    } catch (err: any) {
+      error.value = err?.response?.data?.error || 'Failed to submit ballot'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+
   return {
     loading,
     error,
@@ -288,6 +310,7 @@ export const useElectionStore = defineStore('election', () => {
     retrievePosition,
     fetchPositions,       
     fetchElectionDetails,
-    fetchUsers,           
+    fetchUsers,
+    submitBallot,
   }
 })
