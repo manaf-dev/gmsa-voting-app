@@ -22,6 +22,16 @@ urlpatterns = [
         name="retrieve-user",
     ),
     path(
+        "users/<str:user_id>/update/",
+        UserViewset.as_view({"put": "update_user"}),
+        name="update-user",
+    ),
+    path(
+        "user/<uuid:user_id>/remove/",
+        UserViewset.as_view({"post": "remove_user"}),
+        name="remove-user",
+    ),
+    path(
         "password/change/",
         UserViewset.as_view({"post": "change_password"}),
         name="change-password",

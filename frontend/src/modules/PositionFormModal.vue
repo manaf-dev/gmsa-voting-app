@@ -16,7 +16,7 @@ const route = useRoute()
 const props = defineProps<{
   showModal: boolean
   electionId: string
-  editingPosition: any
+  editingPosition: any | null
 }>()
 
 const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
@@ -26,7 +26,7 @@ const PositionDetails = reactive({
   description: '',
   max_candidates: '',
   order: '',
-  election: '',
+  election: props.electionId,
 })
 
 // Watch for editing position changes

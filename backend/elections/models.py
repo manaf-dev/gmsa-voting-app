@@ -133,7 +133,7 @@ class Candidate(models.Model):
             try:
 
                 vote_data = crypto.decrypt_vote_data(vote.encrypted_vote_data)
-                if vote_data.get("candidate_id") == str(self.id):
+                if vote_data.get("candidate_id") == str(self.id) and vote_data.get("approve", True) is True:
                     count += 1
             except Exception as e:
                 # Skip corrupted votes
@@ -202,7 +202,7 @@ class Vote(models.Model):
         return f"Anonymous vote {short_id} in election {self.election_id}"
 
     @classmethod
-    def create_secure_vote(cls, voter, candidate, ip_address=None):
+    def create_secure_vote(cls, voter, candidate, ip_address=None, approve: bool = True):
         """
         Create a new secure anonymous vote with encryption and digital signature.
         No direct references to voter or candidate are stored.
@@ -226,6 +226,7 @@ class Vote(models.Model):
             "election_id": str(candidate.position.election.id),
             "election_title": candidate.position.election.title,
             "timestamp": timezone.now().isoformat(),
+            "approve": bool(approve),
         }
 
         # Encrypt vote data (contains all sensitive information)

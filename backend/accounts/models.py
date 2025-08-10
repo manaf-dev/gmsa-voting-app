@@ -29,6 +29,7 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
     can_vote = models.BooleanField(default=True)
     changed_password = models.BooleanField(default=False)
+    hall = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f"{self.student_id} - {self.get_full_name() or self.username}"

@@ -20,6 +20,7 @@ from .serializers import (
     UserLoginSerializer,
     UserSerializer,
     ChangePasswordSerializer,
+    UserUpdateSerializer,
 )
 from accounts.selectors import get_all_users, get_user_by_id
 from docs.accounts import (
@@ -31,6 +32,8 @@ from docs.accounts import (
     send_voting_reminders_schema,
     add_user_schema,
     change_password_schema,
+    update_user_schema,
+    remove_user_schema,
 )
 from utils.helpers import _generate_password
 
@@ -299,6 +302,7 @@ class UserViewset(viewsets.ViewSet):
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 
+    @retrieve_user_schema
     def retrieve_user(self, request, user_id):
         """Retrieve a user by ID"""
         if not request.user.is_authenticated:
@@ -317,6 +321,28 @@ class UserViewset(viewsets.ViewSet):
         serializer = UserSerializer(user)
         return Response(serializer.data)
     
+    @update_user_schema
+    def update_user(self, request, user_id):
+        """Update user details"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        user = get_user_by_id(user_id)
+        if not user:
+            return Response(
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @change_password_schema
     def change_password(self, request):
         """Change user password"""
@@ -340,6 +366,28 @@ class UserViewset(viewsets.ViewSet):
             return Response({"message": "Password changed successfully."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @remove_user_schema
+    def remove_user(self, request, user_id):
+        """Soft delete or deactivate a user"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        user = get_user_by_id(user_id)
+        if not user:
+            return Response(
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        if not user.is_active:
+            return Response({"message": "User has been removed already"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.is_active = False
+        user.save()
+        return Response({"message": "User is removed"})
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):

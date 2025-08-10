@@ -41,6 +41,8 @@ export const useAuthStore = defineStore('auth', () => {
       if (access) {
         token.value = access
         apiInstance.defaults.headers.common['Authorization'] = `Bearer ${access}`
+  // persist until it expires (sessionStorage, cleared by expiry check)
+  sessionStorage.setItem('auth_access', access)
       }
 
       // Fetch user profile after login using user_id from JWT claims
@@ -126,6 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Remove token from API headers
     delete apiInstance.defaults.headers.common['Authorization']
+  sessionStorage.removeItem('auth_access')
 
     // Call backend to clear/blacklist refresh cookie
     apiInstance.post('/accounts/jwt/logout/', {}).catch(() => {})

@@ -5,6 +5,7 @@ from accounts.serializers import (
     UserSerializer,
     UserRegistrationSerializer,
     UserLoginSerializer,
+    UserUpdateSerializer,
 )
 
 
@@ -47,16 +48,7 @@ login_schema = extend_schema(
         200: inline_serializer(
             name="LoginSuccessSerializer",
             fields={
-                "user": UserSerializer(),
-                "token": serializers.CharField(),
-                "message": serializers.CharField(),
-            },
-        ),
-        400: inline_serializer(
-            name="LoginErrorSerializer",
-            fields={
-                "error": serializers.CharField(),
-                "details": serializers.CharField(required=False),
+                "access": serializers.CharField(),
             },
         ),
     },
@@ -68,6 +60,27 @@ retrieve_user_schema = extend_schema(
     description="This endpoint retrieves the details of a specific user by their ID.",
     responses={200: UserSerializer},
     tags=["Users"],
+)
+
+update_user_schema = extend_schema(
+    summary="Update user details",
+    description="This endpoints updates details of specific user",
+    request=UserUpdateSerializer,
+    responses={200: UserSerializer},
+    tags=["Users"]
+)
+
+remove_user_schema = extend_schema(
+    summary="Remove user",
+    description="This endpoints removes user from active users on the system",
+    request=None,
+    responses={200: inline_serializer(
+            name="RemoveResponse",
+            fields={
+                "message": serializers.CharField(),
+            },
+        ),},
+    tags=["Users"]
 )
 
 change_password_schema = extend_schema(

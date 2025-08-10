@@ -59,6 +59,12 @@ const fetchElectionAndPositions = async () => {
   election.value = await electionStore.fetchElectionDetails(electionId)
 }
 
+const goToVote = () => {
+  router.push(`/elections/${electionId}/vote`).catch((err) => {
+    console.error('Navigation error:', err)
+  })
+}
+
 onMounted(() => {
   fetchElectionAndPositions()
 })
@@ -92,6 +98,7 @@ onMounted(() => {
           </BaseBtn>
           <BaseBtn
             class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
+            @click="goToVote"
           >
             Cast Vote
           </BaseBtn>

@@ -153,7 +153,8 @@ class CastVoteSerializer(serializers.Serializer):
 
 class SelectionItemSerializer(serializers.Serializer):
     position_id = serializers.UUIDField()
-    candidate_id = serializers.UUIDField()
+    candidate_id = serializers.UUIDField(required=False)
+    approve = serializers.BooleanField(required=False, help_text="For single-candidate positions, set True for YES, False for NO")
 
 
 class BulkCastVoteSerializer(serializers.Serializer):
@@ -183,6 +184,7 @@ class BulkCastVoteSerializer(serializers.Serializer):
         for item in selections:
             pid = item.get("position_id")
             cid = item.get("candidate_id")
+            approve = item.get("approve", None)
 
             try:
                 position = Position.objects.get(id=pid)
@@ -194,12 +196,17 @@ class BulkCastVoteSerializer(serializers.Serializer):
                     f"Position {position.id} does not belong to this election"
                 )
 
-            try:
-                candidate = Candidate.objects.get(id=cid, position=position)
-            except Candidate.DoesNotExist:
-                raise serializers.ValidationError(
-                    f"Invalid candidate {cid} for position {position.id}"
-                )
+            # If position has single candidate, we can allow approve flag without explicit candidate_id
+            candidates_qs = Candidate.objects.filter(position=position).order_by("order")
+            if cid is None and approve is not None and candidates_qs.count() == 1:
+                candidate = candidates_qs.first()
+            else:
+                try:
+                    candidate = Candidate.objects.get(id=cid, position=position)
+                except Candidate.DoesNotExist:
+                    raise serializers.ValidationError(
+                        f"Invalid candidate {cid} for position {position.id}"
+                    )
 
             # Only one choice per position (model enforces 1 vote per position)
             if position.id in seen_positions:
@@ -208,9 +215,16 @@ class BulkCastVoteSerializer(serializers.Serializer):
                 )
             seen_positions.add(position.id)
 
+            # For multi-candidate positions, approve shouldn't be set
+            if candidates_qs.count() > 1 and approve is not None:
+                raise serializers.ValidationError(
+                    f"'approve' is only valid for single-candidate positions ({position.title})"
+                )
+
             validated_items.append({
                 "position": position,
                 "candidate": candidate,
+                "approve": approve if approve is not None else True,
             })
 
         attrs["election"] = election
