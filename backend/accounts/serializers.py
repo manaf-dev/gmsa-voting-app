@@ -96,6 +96,22 @@ class UserSerializer(serializers.ModelSerializer):
         representation["years_since_admission"] = instance.years_since_admission
         return representation
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "student_id",
+            "phone_number",
+            "year_of_study",
+            "program",
+            "admission_year",
+        )
+
+    
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
