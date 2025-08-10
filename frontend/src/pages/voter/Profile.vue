@@ -1,50 +1,95 @@
+<script setup lang="ts">
+import { onMounted, ref, reactive } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import NavBar from '@/components/NavBar.vue'
+import BaseBtn from '@/components/BaseBtn.vue'
+import { ArrowLeft, IdCard, Mail, Phone, BookOpen } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const toast = useToast()
+
+const user = ref<any>(null)
+const isSubmitting = ref(false)
+
+const passwordForm = reactive({
+  old_password: '',
+  new_password: '',
+  confirm_password: '',
+})
+
+const goBack = () => {
+  router.back()
+}
+
+const changePassword = async () => {
+  if (passwordForm.new_password !== passwordForm.confirm_password) {
+    toast.error('New password and confirm password do not match')
+    return
+  }
+  try {
+    isSubmitting.value = true
+    console.log(passwordForm) // Debug
+    await authStore.changePassword(passwordForm)
+    toast.success('Password changed successfully!')
+    passwordForm.old_password = ''
+    passwordForm.new_password = ''
+    passwordForm.confirm_password = ''
+  } catch (error) {
+    toast.error('Failed to change password')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onMounted(() => {
+  user.value = authStore.user
+})
+</script>
+
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center space-x-4">
-            <router-link to="/dashboard" class="text-primary-600 hover:text-primary-700">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </router-link>
-            <h1 class="text-xl font-bold text-gray-900">Profile</h1>
-          </div>
+    <!-- Navbar -->
+    <NavBar>
+      <template #left>
+        <button
+          class="flex items-center text-gray-700 hover:bg-gray-100 p-2 rounded-full"
+          @click="goBack"
+        >
+          <ArrowLeft class="w-5 h-5" />
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">Profile</h1>
+      </template>
 
-          <div class="flex items-center space-x-4">
-            <span class="text-sm text-gray-600">Display Name</span>
-          </div>
-        </div>
-      </div>
-    </nav>
+      <template #right>
+        <span class="text-sm text-gray-600"> {{ user?.first_name }} {{ user?.last_name }} </span>
+      </template>
+    </NavBar>
 
-    <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="max-w-4xl mx-auto pt-20 pb-5 px-4 sm:px-6 lg:px-8">
+      <div>
         <!-- Profile Information -->
         <div class="lg:col-span-2">
           <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h3 class="text-lg font-medium text-gray-900">Profile Information</h3>
-              <button class="btn btn-outline btn-sm">Edit Profile</button>
             </div>
 
             <div class="p-6 space-y-6">
-              <!-- Profile Picture Placeholder -->
+              <!-- Basic Info -->
               <div class="flex items-center space-x-6">
-                <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span class="text-2xl font-bold text-primary-600">U</span>
-                </div>
                 <div>
-                  <h2 class="text-xl font-bold text-gray-900">User Name</h2>
-                  <p class="text-sm text-gray-600">Student ID</p>
-                  <p class="text-sm text-gray-600">user@email.com</p>
+                  <h2 class="text-xl font-bold text-gray-900">
+                    {{ user?.first_name }} {{ user?.last_name }}
+                  </h2>
+                  <p class="text-sm text-gray-600">
+                    <IdCard class="inline w-4 h-4 mr-1" /> ID: {{ user?.student_id }}
+                  </p>
+                  <p class="text-sm text-gray-600">
+                    <Mail class="inline w-4 h-4 mr-1" /> {{ user?.email }}
+                  </p>
                 </div>
               </div>
 
@@ -52,170 +97,87 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">First Name</label>
-                  <p class="mt-1 text-sm text-gray-900">Not provided</p>
+                  <p class="mt-1 text-sm text-gray-900">{{ user?.first_name || 'Not provided' }}</p>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Last Name</label>
-                  <p class="mt-1 text-sm text-gray-900">Not provided</p>
+                  <p class="mt-1 text-sm text-gray-900">{{ user?.last_name || 'Not provided' }}</p>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Phone Number</label>
-                  <p class="mt-1 text-sm text-gray-900">Not provided</p>
+                  <p class="mt-1 text-sm text-gray-900">
+                    <Phone class="inline w-4 h-4 mr-1" />
+                    {{ user?.phone || 'Not provided' }}
+                  </p>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Year of Study</label>
-                  <p class="mt-1 text-sm text-gray-900">Level Not provided</p>
+                  <p class="mt-1 text-sm text-gray-900">
+                    <BookOpen class="inline w-4 h-4 mr-1" />
+                    {{ user?.year_of_study ? 'Level ' + user.year_of_study : 'Not provided' }}
+                  </p>
                 </div>
 
                 <div class="md:col-span-2">
                   <label class="block text-sm font-medium text-gray-700">Program</label>
-                  <p class="mt-1 text-sm text-gray-900">Not provided</p>
+                  <p class="mt-1 text-sm text-gray-900">{{ user?.program || 'Not provided' }}</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-6">
-          <!-- Account Status -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Account Status</h3>
+          <!-- Change Password Form -->
+          <div class="bg-white rounded-xl shadow-xl p-8 mt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+            <form @submit.prevent="changePassword">
+              <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
+                Old Password
+                <input
+                  v-model="passwordForm.old_password"
+                  type="password"
+                  required
+                  autocomplete="current-password"
+                  class="w-full px-3 py-2 border mt-1 border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 ring-gray-500"
+                  placeholder="Enter your current password"
+                />
+              </label>
 
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Membership Status</span>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-                >
-                  Inactive
-                </span>
-              </div>
+              <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
+                New Password
+                <input
+                  v-model="passwordForm.new_password"
+                  type="password"
+                  required
+                  autocomplete="new-password"
+                  class="w-full px-3 py-2 border mt-1 border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 ring-gray-500"
+                  placeholder="Enter your new password"
+                />
+              </label>
 
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Dues Payment</span>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
-                >
-                  Pending
-                </span>
-              </div>
+              <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
+                Confirm New Password
+                <input
+                  v-model="passwordForm.confirm_password"
+                  type="password"
+                  required
+                  autocomplete="new-password"
+                  class="w-full px-3 py-2 border mt-1 border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 ring-gray-500"
+                  placeholder="Confirm your new password"
+                />
+              </label>
 
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">EC Member</span>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
-                >
-                  Yes
-                </span>
-              </div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-gray-200">
-              <router-link to="/payment/dues" class="btn btn-primary btn-sm w-full">
-                Pay Dues Now
-              </router-link>
-            </div>
+              <BaseBtn
+                type="submit"
+                class="w-full btn btn-primary py-3 mt-5 flex items-center justify-center cursor-pointer"
+                :disabled="isSubmitting"
+              >
+                {{ isSubmitting ? 'Changing...' : 'Change Password' }}
+              </BaseBtn>
+            </form>
           </div>
-
-          <!-- Payment Summary -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Summary</h3>
-
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Total Paid</span>
-                <span class="text-sm font-medium text-gray-900">₵0.00</span>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Last Payment</span>
-                <span class="text-sm font-medium text-gray-900">N/A</span>
-              </div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-gray-200">
-              <router-link to="/payment/donation" class="btn btn-outline btn-sm w-full">
-                Make Donation
-              </router-link>
-            </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-
-            <div class="space-y-3">
-              <router-link to="/elections" class="block w-full btn btn-outline btn-sm">
-                View Elections
-              </router-link>
-
-              <router-link to="/dashboard" class="block w-full btn btn-outline btn-sm">
-                Dashboard
-              </router-link>
-
-              <button class="block w-full btn btn-outline btn-sm">Admin Panel</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Payment History -->
-      <div class="mt-8 bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Payment History</h3>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Date
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Type
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Amount
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Reference
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">01 Jan 2025</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Membership Dues</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₵0.00</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                  >
-                    Pending
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">REF0000</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

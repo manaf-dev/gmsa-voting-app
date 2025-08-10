@@ -105,6 +105,12 @@ const router = createRouter({
       // meta: { requiresAuth: true, requiresEC: true }
     },
     {
+      path: '/members/:id',
+      name: 'MemberDetails',
+      component: () => import('@/pages/admin/MemberDetails.vue'),
+      props: true
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('../pages/voter/Profile.vue'),

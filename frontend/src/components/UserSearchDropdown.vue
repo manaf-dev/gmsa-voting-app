@@ -18,13 +18,14 @@ const emit = defineEmits<{
 
 const searchQuery = ref('')
 const isOpen = ref(false)
-const selectedUser = ref<any>(null) 
+const selectedUser = ref<any>(null)
 
 watch(
   () => props.selectedUserId,
   (newUserId) => {
     if (newUserId) {
-      selectedUser.value = electionStore.availableUsers.find((user) => user.id === newUserId) || null
+      selectedUser.value =
+        electionStore.availableUsers.find((user) => user.id === newUserId) || null
       searchQuery.value = selectedUser.value?.display_name || ''
     } else {
       selectedUser.value = null

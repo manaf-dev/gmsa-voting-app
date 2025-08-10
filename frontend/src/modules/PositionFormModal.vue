@@ -46,7 +46,7 @@ watch(
 const SubmitPositionDetails = async () => {
   try {
     if (props.editingPosition) {
-      await electionStore.updatePosition(props.editingPosition.id, PositionDetails)
+      await electionStore.updatePosition(props.electionId, PositionDetails)
       toast.success('Position updated successfully!')
     } else {
       await electionStore.createPosition(props.electionId, PositionDetails)

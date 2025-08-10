@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import apiInstance from '@/services/api'
+import ChangePassword from '@/pages/auth/ChangePassword.vue'
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
@@ -79,6 +80,43 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+
+  async function resetPassword(studentId: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiInstance.post(
+        '/accounts/admin/reset-password/',
+        { student_id: studentId } // ✅ send as JSON
+      )
+      return response.data
+    } catch (err: any) {
+      error.value = 'Password reset failed'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  async function changePassword(password: object) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiInstance.post(
+        '/accounts/password/change/',
+        password // ✅ send the passed object directly
+      )
+      return response.data
+    } catch (err: any) {
+      error.value = 'Password change failed'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  
+
   function logout() {
     user.value = null
     token.value = null
@@ -102,6 +140,8 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     register,
     login,
+    resetPassword,
+    changePassword,
     logout,
   }
 })
