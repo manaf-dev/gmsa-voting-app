@@ -79,6 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
             "updated_at",
             "can_vote",
             "active_elections_vote_status",
+            'changed_password'
         )
 
     def get_active_elections_vote_status(self, obj) -> dict:
