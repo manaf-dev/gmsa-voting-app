@@ -14,7 +14,7 @@ const route = useRoute()
 const electionStore = useElectionStore()
 
 const showPositionModal = ref(false)
-const editingPosition = ref({})
+const editingPosition = ref(null)
 const electionId = route.params.id as string
 const showEditElection = ref(false)
 const showDeleteElection = ref(false)
