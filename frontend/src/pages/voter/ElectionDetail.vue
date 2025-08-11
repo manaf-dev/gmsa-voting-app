@@ -66,7 +66,7 @@ onMounted(() => {
       </template>
     </NavBar>
 
-    <div v-if="!loading" class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8 mt-10 sm:mt-14">
+    <div v-if="!loading" class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24">
       <!-- Election Header -->
       <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-6">
         <div class="text-center mb-6">
@@ -95,7 +95,9 @@ onMounted(() => {
               <Calendar class="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
             <span class="text-xs sm:text-sm text-gray-500">Starts</span>
-            <span class="font-semibold text-gray-900 text-sm">{{ fmt12h(currentElection?.start_date) }}</span>
+            <span class="font-semibold text-gray-900 text-sm">{{
+              fmt12h(currentElection?.start_date)
+            }}</span>
           </div>
           <div class="flex flex-col items-center">
             <div
@@ -104,7 +106,9 @@ onMounted(() => {
               <Clock class="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
             </div>
             <span class="text-xs sm:text-sm text-gray-500">Ends</span>
-            <span class="font-semibold text-gray-900 text-sm">{{ fmt12h(currentElection?.end_date) }}</span>
+            <span class="font-semibold text-gray-900 text-sm">{{
+              fmt12h(currentElection?.end_date)
+            }}</span>
           </div>
           <div class="flex flex-col items-center">
             <div

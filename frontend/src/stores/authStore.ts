@@ -30,6 +30,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function addNewUser(UserDetails: object) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await apiInstance.post('/accounts/admin/add-user/', UserDetails)
+      
+      return response.data
+    } catch (err: any) {
+      error.value = 'Registration failed'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function login(UserDetails: any) {
     loading.value = true
     error.value = null
@@ -142,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     register,
+    addNewUser,
     login,
     resetPassword,
     changePassword,

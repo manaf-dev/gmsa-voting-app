@@ -19,7 +19,7 @@ const electionId = route.params.id as string
 const showEditElection = ref(false)
 const showDeleteElection = ref(false)
 const showDeleteConfirm = ref(false)
-const deleteTarget = ref<{ type: 'position'|'candidate'; id: string } | null>(null)
+const deleteTarget = ref<{ type: 'position' | 'candidate'; id: string } | null>(null)
 
 const election = ref<any>(null)
 const positions = computed(() => {
@@ -118,7 +118,7 @@ const performDeleteAction = async () => {
       </template>
     </NavBar>
 
-    <div v-if="election" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-10 sm:mt-14">
+    <div v-if="election" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-14 sm:mt-24">
       <!-- Header -->
       <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-4 justify-between">
         <h1 class="text-3xl font-bold text-gray-900">{{ election?.title }}</h1>
@@ -152,7 +152,11 @@ const performDeleteAction = async () => {
             Cast Vote
           </BaseBtn>
           <BaseBtn
-            v-if="election?.status === 'completed' || election?.can_view_results || election?.can_review_results"
+            v-if="
+              election?.status === 'completed' ||
+              election?.can_view_results ||
+              election?.can_review_results
+            "
             class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
             @click="goToResults"
           >
@@ -207,7 +211,16 @@ const performDeleteAction = async () => {
               >
                 <Edit class="h-4 w-4" />
               </button>
-              <button @click.stop="() => (deleteTarget = { type: 'position', id: position.id }, showDeleteConfirm = true)" class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer" title="Delete Position">
+              <button
+                @click.stop="
+                  () => (
+                    (deleteTarget = { type: 'position', id: position.id }),
+                    (showDeleteConfirm = true)
+                  )
+                "
+                class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
+                title="Delete Position"
+              >
                 <Trash2 class="h-4 w-4" />
               </button>
               <div class="flex items-center text-gray-400">
@@ -227,7 +240,7 @@ const performDeleteAction = async () => {
       </div>
     </div>
 
-  <PositionFormModal
+    <PositionFormModal
       :v-if="showPositionModal"
       :showModal="showPositionModal"
       :electionId="electionId"
@@ -236,9 +249,30 @@ const performDeleteAction = async () => {
       @save="fetchElectionAndPositions"
     />
 
-  <ElectionFormModal :show="showEditElection" :election="election" @close="showEditElection = false" @saved="handleElectionSaved" />
-  <ConfirmModal :show="showDeleteElection" title="Delete Election" message="This will permanently remove the election and its positions/candidates. Proceed?" confirmText="Delete" cancelText="Cancel" @close="showDeleteElection = false" @confirm="performDeleteElection" />
+    <ElectionFormModal
+      :show="showEditElection"
+      :election="election"
+      @close="showEditElection = false"
+      @saved="handleElectionSaved"
+    />
+    <ConfirmModal
+      :show="showDeleteElection"
+      title="Delete Election"
+      message="This will permanently remove the election and its positions/candidates. Proceed?"
+      confirmText="Delete"
+      cancelText="Cancel"
+      @close="showDeleteElection = false"
+      @confirm="performDeleteElection"
+    />
 
-  <ConfirmModal :show="showDeleteConfirm" title="Delete Position" message="This will permanently remove the position and its candidates. Proceed?" confirmText="Delete" cancelText="Cancel" @close="showDeleteConfirm = false" @confirm="performDeleteAction" />
+    <ConfirmModal
+      :show="showDeleteConfirm"
+      title="Delete Position"
+      message="This will permanently remove the position and its candidates. Proceed?"
+      confirmText="Delete"
+      cancelText="Cancel"
+      @close="showDeleteConfirm = false"
+      @confirm="performDeleteAction"
+    />
   </div>
 </template>
