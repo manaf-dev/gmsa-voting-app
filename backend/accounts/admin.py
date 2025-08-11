@@ -30,7 +30,7 @@ class UserAdmin(BaseUserAdmin):
                 )
             },
         ),
-        ("Permissions", {"fields": ("is_ec_member",)}),
+        ("Permissions", {"fields": ("is_ec_member", "changed_password")}),
     )
 
     actions = ["promote_to_next_level", "mark_as_graduate", "mark_as_alumni"]

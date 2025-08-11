@@ -196,8 +196,9 @@ class UserViewset(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @add_user_schema
-    def admin_add_user(self, user_data):
+    def admin_add_user(self, request):
         """Admin function to add a user with generated credentials and send SMS notification."""
+        user_data = request.data.copy()
         user_data["password"] = user_data["confirm_password"] = _generate_password()
 
         serializer = UserRegistrationSerializer(data=user_data)
@@ -206,13 +207,14 @@ class UserViewset(viewsets.ViewSet):
             # Send SMS notification
             try:
                 from utils.sms_service import send_welcome_sms
-
                 send_welcome_sms(user, user_data["password"], async_send=True)
             except Exception as e:
-                return {"error": str(e)}
-            return {"user": user, "message": "User registered successfully"}
+                print({"error": str(e)})
+                
+            context = {"user": UserSerializer(user).data, "message": "User registered successfully"}
+            return Response(context, status=status.HTTP_201_CREATED)
         else:
-            return {"error": serializer.errors}
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     @bulk_registration_schema
     def bulk_registration(self, request):
@@ -398,7 +400,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     """
 
     permission_classes = [AllowAny]
-    serializer_class = TokenObtainPairSerializer
+    serializer_class = UserLoginSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

@@ -43,14 +43,6 @@ const submitChangePassword = async () => {
 <template>
   <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-4 text-center">
-      <div class="mx-auto w-max">
-        <BaseBtn
-          class="flex items-center gap-1 text-green-300 hover:bg-green-50 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
-          @click="$router.back()"
-        >
-          <ArrowBigLeft /> Back
-        </BaseBtn>
-      </div>
 
       <div class="mb-4">
         <h1 class="text-3xl font-bold text-primary-600">Change Password</h1>

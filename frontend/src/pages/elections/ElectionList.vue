@@ -110,10 +110,6 @@ onMounted(() => {
               <p class="text-xs text-gray-400">{{ formatDate(election.end_date).time }}</p>
             </div>
             <div>
-              <span class="text-gray-500">Total Votes:</span>
-              <p class="font-medium">{{ election.total_votes || 0 }}</p>
-            </div>
-            <div>
               <span class="text-gray-500">Created By:</span>
               <p class="font-medium">{{ election.created_by_name }}</p>
             </div>

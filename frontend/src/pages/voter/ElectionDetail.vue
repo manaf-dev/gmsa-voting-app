@@ -5,10 +5,12 @@ import { ArrowLeft, Calendar, Users, Clock, User } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { useElectionStore } from '@/stores/electionStore'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
+const authStore = useAuthStore()
 
 const electionId = route.params.id as string
 const currentElection = ref<any>(null)
@@ -80,7 +82,7 @@ onMounted(() => {
         <div v-if="currentElection?.status === 'active'" class="mb-6 text-center">
           <router-link
             :to="`/elections/${electionId}/vote`"
-            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors shadow-md"
+            :class="['inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors shadow-md', authStore.user?.active_elections_vote_status?.[electionId] ? 'opacity-50 pointer-events-none cursor-not-allowed' : '']"
           >
             🗳️ Cast Your Vote
           </router-link>
