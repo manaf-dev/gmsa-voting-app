@@ -23,7 +23,6 @@ from .serializers import (
     CandidateSerializer,
     CastVoteSerializer,
     BulkCastVoteSerializer,
-    ElectionResultSerializer,
 )
 from .crypto import check_security_configuration
 from utils.helpers import absolute_media_url_builder

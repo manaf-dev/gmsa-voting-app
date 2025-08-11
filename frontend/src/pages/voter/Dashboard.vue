@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
+import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 
 import { useAuthStore } from '@/stores/authStore'
 import { useElectionStore } from '@/stores/electionStore'
@@ -56,6 +57,21 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+// Show ChangePasswordModal if password is not changed
+const showChangePasswordModal = computed(() => authStore.user && authStore.user.changed_password === false)
+
+// After password change, refresh user data
+const refreshUser = () => {
+  if (authStore.user?.id) {
+    import('@/services/api').then(api => {
+      api.default.get(`/accounts/users/${authStore.user.id}/retrieve/`).then(me => {
+        authStore.user = me.data
+        localStorage.setItem('auth_user', JSON.stringify(authStore.user))
+      })
+    })
+  }
+}
 </script>
 
 <template>
@@ -178,19 +194,21 @@ onBeforeUnmount(() => {
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
                   <router-link
-                    v-if="!(authStore.user?.active_elections_vote_status?.[election.id]) && !election.can_view_results"
                     :to="`/elections/${election.id}/vote`"
-                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
+                    :class="[
+                      'flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors',
+                      authStore.user?.active_elections_vote_status?.[election.id] ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''
+                    ]"
                   >
                     🗳️ Cast Your Vote
                   </router-link>
-                  <router-link
+                  <!-- <router-link
                     v-else
                     :to="`/elections/${election.id}/results`"
                     class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
                     📊 View Results
-                  </router-link>
+                  </router-link> -->
                   <router-link
                     :to="`/voter/elections/${election.id}`"
                     class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-4 rounded-lg font-medium transition-colors"
@@ -313,6 +331,14 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <!-- Change Password Modal -->
+    <ChangePasswordModal
+      v-if="showChangePasswordModal"
+      :show="showChangePasswordModal"
+      @close="() => {}"
+      @password-changed="refreshUser"
+    />
   </div>
 </template>
 

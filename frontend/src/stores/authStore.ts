@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import apiInstance from '@/services/api'
 import ChangePassword from '@/pages/auth/ChangePassword.vue'
@@ -8,9 +8,11 @@ export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
 
   const user = ref<any>(JSON.parse(localStorage.getItem('auth_user') || 'null'))
-  const token = ref<string | null>(null) // store access in-memory only
+  const token = ref<string | null>(sessionStorage.getItem('auth_access') || null) // store access in-memory only
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const isAuthenticated = computed(() => !!token.value)
+  const isECMember = computed(() => user.value?.is_ec_member || false)
 
   // No token restoration from localStorage; refresh cookie handles session longevity
 
@@ -61,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
   sessionStorage.setItem('auth_access', access)
       }
 
-      // Fetch user profile after login using user_id from JWT claims
+  // Fetch user profile after login using user_id from JWT claims
       try {
         const parseJwt = (t: string) => {
           try {
@@ -105,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiInstance.post(
         '/accounts/admin/reset-password/',
-        { student_id: studentId } // ✅ send as JSON
+        { student_id: studentId } // send as JSON
       )
       return response.data
     } catch (err: any) {
@@ -122,8 +124,15 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiInstance.post(
         '/accounts/password/change/',
-        password // ✅ send the passed object directly
+        password // send the passed object directly
       )
+      // Update local user flag so guard stops redirecting
+      try {
+        if (user.value) {
+          user.value.changed_password = true
+          localStorage.setItem('auth_user', JSON.stringify(user.value))
+        }
+      } catch {}
       return response.data
     } catch (err: any) {
       error.value = 'Password change failed'
@@ -155,6 +164,8 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     token,
+    isAuthenticated,
+    isECMember,
     loading,
     error,
     register,

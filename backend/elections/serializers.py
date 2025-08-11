@@ -64,8 +64,6 @@ class ElectionSerializer(serializers.ModelSerializer):
             "email": instance.created_by.email,
         }
         data["positions"] = PositionSerializer(instance.positions.all(), many=True, context=self.context).data
-        data["total_votes"] = instance.total_votes
-        data["total_voters"] = instance.total_voters
         data["is_active"] = instance.is_active
         data["can_vote"] = instance.can_vote
         # Results publishing flags and derived permissions
@@ -98,8 +96,6 @@ class ElectionSerializer(serializers.ModelSerializer):
 
 
 class ElectionListSerializer(serializers.ModelSerializer):
-    total_votes = serializers.ReadOnlyField()
-    total_voters = serializers.ReadOnlyField()
     is_active = serializers.ReadOnlyField()
     results_published = serializers.ReadOnlyField()
     can_view_results = serializers.SerializerMethodField()
@@ -107,14 +103,6 @@ class ElectionListSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(
         source="created_by.display_name", read_only=True
     )
-
-    @extend_schema_field(serializers.IntegerField)
-    def get_total_votes(self, obj):
-        return obj.total_votes
-
-    @extend_schema_field(serializers.IntegerField)
-    def get_total_voters(self, obj):
-        return obj.total_voters
 
     @extend_schema_field(serializers.BooleanField)
     def get_is_active(self, obj):
@@ -129,8 +117,6 @@ class ElectionListSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "status",
-            "total_votes",
-            "total_voters",
             "is_active",
             "results_published",
             "can_view_results",

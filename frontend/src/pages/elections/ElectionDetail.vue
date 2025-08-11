@@ -8,10 +8,12 @@ import { ref, onMounted, computed } from 'vue'
 import PositionFormModal from '@/modules/PositionFormModal.vue'
 import ElectionFormModal from '@/modules/ElectionFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
+const authStore = useAuthStore()
 
 const showPositionModal = ref(false)
 const editingPosition = ref(null)
@@ -145,7 +147,7 @@ const performDeleteAction = async () => {
             Add Position
           </BaseBtn>
           <BaseBtn
-            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
+            :class="['inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer', authStore.user?.active_elections_vote_status?.[electionId] ? 'opacity-50 pointer-events-none cursor-not-allowed' : '']"
             @click="goToVote"
             v-if="election.status === 'active'"
           >
@@ -182,10 +184,6 @@ const performDeleteAction = async () => {
         <div>
           <span class="text-gray-500">Total Positions:</span>
           <p class="font-medium">{{ positions.length }}</p>
-        </div>
-        <div>
-          <span class="text-gray-500">Total Ballots:</span>
-          <p class="font-medium">{{ election?.total_voters || 0 }}</p>
         </div>
       </div>
 

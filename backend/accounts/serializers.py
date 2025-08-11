@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User, AcademicYear
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -35,11 +36,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserLoginSerializer(serializers.Serializer):
+class UserLoginSerializer(TokenObtainPairSerializer):
     username = serializers.CharField(help_text="Username or Student ID for login")
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
+
         username = attrs.get("username")
         password = attrs.get("password")
 
@@ -51,8 +53,12 @@ class UserLoginSerializer(serializers.Serializer):
                     "Invalid credentials. Please check your username/student ID and password."
                 )
             if not user.is_active:
-                raise serializers.ValidationError("Account is disabled.")
-            attrs["user"] = user
+                raise serializers.ValidationError("Account is removed.")
+            
+            refresh = self.get_token(self.user)
+
+            attrs["refresh"] = str(refresh)
+            attrs["access"] = str(refresh.access_token)
         else:
             raise serializers.ValidationError("Must include username and password.")
         return attrs
