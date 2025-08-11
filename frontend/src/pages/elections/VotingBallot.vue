@@ -387,23 +387,32 @@ onMounted(() => {
             <!-- Single Candidate - Yes/No Vote -->
             <div v-if="currentCandidates.length === 1" class="space-y-4">
               <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center gap-4 mb-4">
-                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <User class="h-8 w-8 text-green-600" />
+                <div class="flex flex-col md:flex-row items-center md:items-start gap-4 mb-4">
+                  <div class="shrink-0">
+                    <img
+                      v-if="currentCandidates[0].profile_picture_url || currentCandidates[0].profile_picture"
+                      :src="currentCandidates[0].profile_picture_url || currentCandidates[0].profile_picture"
+                      :alt="currentCandidates[0].user?.display_name || 'Candidate photo'"
+                      loading="lazy"
+                      class="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border border-gray-200 mx-auto md:mx-0"
+                    />
+                    <div v-else class="w-40 h-40 md:w-48 md:h-48 bg-green-50 rounded-full flex items-center justify-center border border-gray-200 mx-auto md:mx-0">
+                      <User class="h-16 w-16 md:h-20 md:w-20 text-green-600" />
+                    </div>
                   </div>
-                  <div class="flex-1">
+                  <div class="flex-1 text-center md:text-left w-full">
                     <h3 class="font-semibold text-lg">
                       {{ currentCandidates[0].user?.display_name }}
                     </h3>
-                    <p class="text-gray-600">{{ currentCandidates[0].user?.student_id }}</p>
+                    <!-- <p class="text-gray-600">{{ currentCandidates[0].user?.student_id }}</p> -->
                   </div>
                 </div>
                 
                 <div v-if="currentCandidates[0].manifesto" class="mb-4">
-                  <h4 class="font-medium text-gray-900 mb-2">Manifesto:</h4>
+                  <!-- <h4 class="font-medium text-gray-900 mb-2">Manifesto:</h4>
                   <p class="text-gray-600 text-sm manifesto-preview">
                     {{ truncateText(currentCandidates[0].manifesto, 2) }}
-                  </p>
+                  </p> -->
                   <button
                     @click="openManifestoModal(currentCandidates[0])"
                     class="text-green-600 text-sm font-medium mt-2 flex items-center gap-1 hover:text-green-700"
@@ -453,7 +462,7 @@ onMounted(() => {
                 Choose one candidate for this position:
               </p>
               
-              <div class="grid gap-4">
+              <div class="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <button
                   v-for="candidate in currentCandidates"
                   :key="candidate.id"
@@ -465,17 +474,26 @@ onMounted(() => {
                       : 'border-gray-300 bg-white hover:border-green-400'
                   ]"
                 >
-                  <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <User class="h-8 w-8 text-green-600" />
+                  <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                    <div class="shrink-0">
+                      <img
+                        v-if="candidate.profile_picture_url || candidate.profile_picture"
+                        :src="candidate.profile_picture_url || candidate.profile_picture"
+                        :alt="candidate.user?.display_name || 'Candidate photo'"
+                        loading="lazy"
+                        class="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full object-cover border border-gray-200 mx-auto sm:mx-0"
+                      />
+                      <div v-else class="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-green-50 rounded-full flex items-center justify-center border border-gray-200 mx-auto sm:mx-0">
+                        <User class="h-14 w-14 sm:h-16 sm:w-16 text-green-600" />
+                      </div>
                     </div>
-                    <div class="flex-1">
+                    <div class="flex-1 text-center sm:text-left w-full">
                       <h3 class="font-semibold text-lg">{{ candidate.user?.display_name }}</h3>
-                      <p class="text-gray-600">{{ candidate.user?.student_id }}</p>
+                      <!-- <p class="text-gray-600">{{ candidate.user?.student_id }}</p> -->
                       <div v-if="candidate.manifesto" class="mt-2">
-                        <p class="text-gray-600 text-sm manifesto-preview">
+                        <!-- <p class="text-gray-600 text-sm manifesto-preview">
                           {{ truncateText(candidate.manifesto, 2) }}
-                        </p>
+                        </p> -->
                         <button
                           @click.stop="openManifestoModal(candidate)"
                           class="text-green-600 text-sm font-medium mt-1 flex items-center gap-1 hover:text-green-700"
@@ -485,7 +503,7 @@ onMounted(() => {
                         </button>
                       </div>
                     </div>
-                    <div v-if="votes[currentPosition.id] === candidate.id" class="ml-4">
+                    <div v-if="votes[currentPosition.id] === candidate.id" class="ml-0 sm:ml-4 mt-2 sm:mt-0">
                       <Check class="w-6 h-6 text-green-600" />
                     </div>
                   </div>

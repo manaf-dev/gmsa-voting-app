@@ -156,9 +156,10 @@ onMounted(async () => {
             <!-- Candidate Header -->
             <div class="flex justify-between items-start mb-4">
               <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <User class="h-6 w-6 text-green-600" />
-                </div>
+                <div class="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                  <img v-if="candidate.profile_picture" :src="candidate.profile_picture" alt="" class="w-12 h-12 object-cover" />
+                  <span v-else class="text-primary-600 font-medium">PO</span>
+              </div>
                 <div>
                   <h3 class="font-semibold text-gray-900">
                     {{ candidate.user?.display_name || 'Name N/A' }}
