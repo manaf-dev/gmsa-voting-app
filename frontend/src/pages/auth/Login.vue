@@ -27,13 +27,13 @@ const SubmitUserDetails = async () => {
 <template>
   <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-4 text-center">
-      <div class="mx-auto w-max">
+      <!-- <div class="mx-auto w-max">
         <BaseBtn
           class="flex items-center gap-1 text-green-300 hover:bg-green-50 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
         >
           <ArrowBigLeft /> Back
         </BaseBtn>
-      </div>
+      </div> -->
       <div class="mb-4">
         <h1 class="text-3xl font-bold text-primary-600">AAMUSTED GMSA</h1>
         <p class="text-sm text-gray-600">Ghana Muslim Students Association</p>
@@ -72,7 +72,7 @@ const SubmitUserDetails = async () => {
             Login
           </BaseBtn>
 
-          <div class="mt-5 text-center">
+          <!-- <div class="mt-5 text-center">
             <p class="text-sm text-gray-600">
               Don't have an account?
               <router-link
@@ -82,7 +82,7 @@ const SubmitUserDetails = async () => {
                 Register here
               </router-link>
             </p>
-          </div>
+          </div> -->
         </form>
       </div>
     </div>

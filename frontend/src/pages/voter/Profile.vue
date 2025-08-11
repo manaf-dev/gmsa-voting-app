@@ -3,7 +3,16 @@ import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
-import { ArrowLeft, IdCard, Mail, Phone, BookOpen, CheckCircle, XCircle, User as UserIcon } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  IdCard,
+  Mail,
+  Phone,
+  BookOpen,
+  CheckCircle,
+  XCircle,
+  User as UserIcon,
+} from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 
@@ -32,10 +41,17 @@ const fullName = computed(() => {
 })
 const initials = computed(() => {
   const parts = fullName.value.split(' ').filter(Boolean)
-  return parts.slice(0, 2).map((p: string) => p[0]?.toUpperCase() || '').join('') || 'U'
+  return (
+    parts
+      .slice(0, 2)
+      .map((p: string) => p[0]?.toUpperCase() || '')
+      .join('') || 'U'
+  )
 })
 
-const activeVoteMap = computed<Record<string, boolean>>(() => user.value?.active_elections_vote_status || {})
+const activeVoteMap = computed<Record<string, boolean>>(
+  () => user.value?.active_elections_vote_status || {},
+)
 const activeVotedCount = computed(() => Object.values(activeVoteMap.value).filter(Boolean).length)
 
 const validatePasswordForm = () => {
@@ -68,7 +84,8 @@ const changePassword = async () => {
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
   } catch (error: any) {
-    const msg = error?.response?.data?.detail || error?.response?.data?.error || 'Failed to change password'
+    const msg =
+      error?.response?.data?.detail || error?.response?.data?.error || 'Failed to change password'
     toast.error(msg)
   } finally {
     isSubmitting.value = false
@@ -84,7 +101,7 @@ watch(
   (u) => {
     user.value = u
   },
-  { immediate: true }
+  { immediate: true },
 )
 </script>
 
@@ -93,21 +110,26 @@ watch(
     <!-- Navbar -->
     <NavBar>
       <template #left>
-        <button class="flex items-center text-gray-700 hover:bg-gray-100 p-2 rounded-full" @click="goBack">
+        <button
+          class="flex items-center text-gray-700 hover:bg-gray-100 p-2 rounded-full"
+          @click="goBack"
+        >
           <ArrowLeft class="w-5 h-5" />
         </button>
         <h1 class="text-lg font-semibold text-gray-800">Profile</h1>
       </template>
-      <template #right>
+      <!-- <template #right>
         <span class="text-sm text-gray-600"> {{ fullName }} </span>
-      </template>
+      </template> -->
     </NavBar>
 
     <!-- Header card -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-6">
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-start gap-4">
-          <div class="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xl font-semibold">
+          <div
+            class="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xl font-semibold"
+          >
             <UserIcon class="w-8 h-8" v-if="!initials" />
             <span v-else>{{ initials }}</span>
           </div>
@@ -116,18 +138,30 @@ watch(
               <div>
                 <h2 class="text-2xl font-semibold text-gray-900">{{ fullName }}</h2>
                 <p class="text-gray-600 text-sm flex items-center gap-3 mt-1">
-                  <span class="inline-flex items-center gap-1"><IdCard class="w-4 h-4" /> {{ user?.student_id }}</span>
-                  <span class="inline-flex items-center gap-1"><Mail class="w-4 h-4" /> {{ user?.email }}</span>
+                  <span class="inline-flex items-center gap-1"
+                    ><IdCard class="w-4 h-4" /> {{ user?.student_id }}</span
+                  >
+                  <!-- <span class="inline-flex items-center gap-1"><Mail class="w-4 h-4" /> {{ user?.email }}</span> -->
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="user?.can_vote ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                <span
+                  class="px-2.5 py-1 rounded-full text-xs font-medium"
+                  :class="
+                    user?.can_vote
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                  "
+                >
                   <span class="inline-flex items-center gap-1">
                     <component :is="user?.can_vote ? CheckCircle : XCircle" class="w-4 h-4" />
                     {{ user?.can_vote ? 'Eligible to vote' : 'Not eligible to vote' }}
                   </span>
                 </span>
-                <span v-if="user?.is_ec_member" class="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span
+                  v-if="user?.is_ec_member"
+                  class="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
+                >
                   EC Member
                 </span>
               </div>
@@ -160,11 +194,16 @@ watch(
             </div>
             <div>
               <div class="text-xs text-gray-500">Phone Number</div>
-              <div class="mt-1 text-gray-900 inline-flex items-center gap-2"><Phone class="w-4 h-4 text-gray-500" /> {{ user?.phone_number || 'Not provided' }}</div>
+              <div class="mt-1 text-gray-900 inline-flex items-center gap-2">
+                <Phone class="w-4 h-4 text-gray-500" /> {{ user?.phone_number || 'Not provided' }}
+              </div>
             </div>
             <div>
               <div class="text-xs text-gray-500">Year of Study</div>
-              <div class="mt-1 text-gray-900 inline-flex items-center gap-2"><BookOpen class="w-4 h-4 text-gray-500" /> {{ user?.year_of_study ? 'Level ' + user.year_of_study : 'Not provided' }}</div>
+              <div class="mt-1 text-gray-900 inline-flex items-center gap-2">
+                <BookOpen class="w-4 h-4 text-gray-500" />
+                {{ user?.year_of_study ? 'Level ' + user.year_of_study : 'Not provided' }}
+              </div>
             </div>
             <div class="md:col-span-2">
               <div class="text-xs text-gray-500">Program</div>
@@ -179,7 +218,9 @@ watch(
             <h3 class="text-base font-semibold text-gray-900">Voting Status</h3>
           </div>
           <div class="p-6">
-            <div v-if="Object.keys(activeVoteMap).length === 0" class="text-sm text-gray-600">No active elections at the moment.</div>
+            <div v-if="Object.keys(activeVoteMap).length === 0" class="text-sm text-gray-600">
+              No active elections at the moment.
+            </div>
             <div v-else class="text-sm text-gray-700 flex flex-wrap gap-2">
               <span class="text-gray-600">You have voted in</span>
               <span class="font-semibold text-gray-900">{{ activeVotedCount }}</span>
@@ -205,7 +246,13 @@ watch(
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Enter your current password"
                 />
-                <button type="button" class="absolute inset-y-0 right-2 text-xs text-gray-500" @click="showOld = !showOld">{{ showOld ? 'Hide' : 'Show' }}</button>
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-2 text-xs text-gray-500"
+                  @click="showOld = !showOld"
+                >
+                  {{ showOld ? 'Hide' : 'Show' }}
+                </button>
               </div>
             </div>
             <div>
@@ -220,7 +267,13 @@ watch(
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Enter your new password"
                 />
-                <button type="button" class="absolute inset-y-0 right-2 text-xs text-gray-500" @click="showNew = !showNew">{{ showNew ? 'Hide' : 'Show' }}</button>
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-2 text-xs text-gray-500"
+                  @click="showNew = !showNew"
+                >
+                  {{ showNew ? 'Hide' : 'Show' }}
+                </button>
               </div>
             </div>
             <div>
@@ -235,7 +288,13 @@ watch(
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Confirm your new password"
                 />
-                <button type="button" class="absolute inset-y-0 right-2 text-xs text-gray-500" @click="showConfirm = !showConfirm">{{ showConfirm ? 'Hide' : 'Show' }}</button>
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-2 text-xs text-gray-500"
+                  @click="showConfirm = !showConfirm"
+                >
+                  {{ showConfirm ? 'Hide' : 'Show' }}
+                </button>
               </div>
             </div>
             <BaseBtn
