@@ -6,6 +6,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import CandidateFormModal from '@/modules/CandidateFormModal.vue'
 import CandidateDetailModal from '@/modules/CandidateDetailModal.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useElectionStore } from '@/stores/electionStore'
 
 const router = useRouter()
@@ -36,13 +37,22 @@ const viewCandidateDetails = (candidate: any) => {
   showCandidateDetailModal.value = true
 }
 
-const deleteCandidate = async (candidateId: string) => {
-  if (!confirm('Are you sure you want to delete this candidate?')) return
-
+const showDeleteConfirm = ref(false)
+const deleteCandidateId = ref<string | null>(null)
+const askDeleteCandidate = (candidateId: string) => {
+  deleteCandidateId.value = candidateId
+  showDeleteConfirm.value = true
+}
+const performDeleteCandidate = async () => {
+  if (!deleteCandidateId.value) return
   try {
-    await electionStore.deleteCandidate(positionId, candidateId)
+    await electionStore.deleteCandidate(positionId, deleteCandidateId.value)
+    await fetchData()
   } catch (error) {
     console.error('Failed to delete candidate:', error)
+  } finally {
+    showDeleteConfirm.value = false
+    deleteCandidateId.value = null
   }
 }
 
@@ -164,11 +174,7 @@ onMounted(async () => {
                 >
                   <Edit class="h-4 w-4" />
                 </button>
-                <button
-                  @click.stop="deleteCandidate(candidate.id)"
-                  class="p-1 text-gray-400 hover:text-red-600 transition"
-                  title="Delete Candidate"
-                >
+                <button @click.stop="askDeleteCandidate(candidate.id)" class="p-1 text-gray-400 hover:text-red-600 transition" title="Delete Candidate">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -224,6 +230,15 @@ onMounted(async () => {
       :show="showCandidateDetailModal"
       :candidate="selectedCandidate"
       @close="showCandidateDetailModal = false"
+    />
+    <ConfirmModal
+      :show="showDeleteConfirm"
+      title="Delete Candidate"
+      message="This will remove the candidate permanently."
+      confirmText="Delete"
+      cancelText="Cancel"
+      @close="showDeleteConfirm = false"
+      @confirm="performDeleteCandidate"
     />
   </div>
 </template>

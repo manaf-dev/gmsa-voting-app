@@ -14,7 +14,7 @@ import {
 
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
-import CreateElection from '@/modules/CreateElection.vue'
+import CreateElection from '@/modules/ElectionFormModal.vue'
 import { ref } from 'vue'
 
 const showCreateElectionModal = ref(false) // Track modal visibility

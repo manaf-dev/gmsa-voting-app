@@ -29,6 +29,34 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
+  // Update Election
+  async function updateElection(electionId: string, payload: object) {
+    loading.value = true
+    try {
+      const response = await apiInstance.put(`/elections/${electionId}/`, payload)
+      return response.data
+    } catch (err: any) {
+      error.value = 'Failed to update election'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Delete Election
+  async function deleteElection(electionId: string) {
+    loading.value = true
+    try {
+      await apiInstance.delete(`/elections/${electionId}/`)
+      return true
+    } catch (err: any) {
+      error.value = 'Failed to delete election'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   
   async function createPosition(electionId: string, PositionDetails: object) {
     loading.value = true
@@ -253,6 +281,19 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
+  async function removeUser(userId: string) {
+    loading.value = true
+    try {
+      const response = await apiInstance.post(`/accounts/user/${userId}/remove/`, {})
+      return response.data
+    } catch (err: any) {
+      error.value = 'Failed to remove user'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Fetch single election
   async function fetchElectionDetails(id: string) {
     loading.value = true
@@ -298,6 +339,8 @@ export const useElectionStore = defineStore('election', () => {
     electionPositions,
     availableUsers,
     createElection,
+  updateElection,
+  deleteElection,
     createPosition,       
     updatePosition,       
     deletePosition,       
@@ -311,6 +354,7 @@ export const useElectionStore = defineStore('election', () => {
     fetchPositions,       
     fetchElectionDetails,
     fetchUsers,
+  removeUser,
     submitBallot,
   }
 })

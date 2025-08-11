@@ -68,8 +68,24 @@ const fetchElectionData = async () => {
       positions.value = await electionStore.fetchPositions(electionId)
     }
     
-    // Check if election is active
+    // If user already voted in this election, prevent access
+    const votedMap = authStore.user?.active_elections_vote_status || {}
+    if (votedMap[electionId]) {
+      toast.info('You have already voted in this election.')
+      if (currentElection.value?.can_view_results) {
+        router.replace(`/elections/${electionId}/results`)
+      } else {
+        router.replace('/dashboard')
+      }
+      return
+    }
+
+    // Check if election is active; if not but results can be viewed, redirect there
     if (currentElection.value?.status !== 'active') {
+      if (currentElection.value?.can_view_results) {
+        router.replace(`/elections/${electionId}/results`)
+        return
+      }
       error.value = 'This election is not currently active.'
       return
     }

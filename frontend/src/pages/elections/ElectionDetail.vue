@@ -6,21 +6,34 @@ import { useRouter, useRoute } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
 import { ref, onMounted, computed } from 'vue'
 import PositionFormModal from '@/modules/PositionFormModal.vue'
+import ElectionFormModal from '@/modules/ElectionFormModal.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const electionStore = useElectionStore()
 
 const showPositionModal = ref(false)
-const showEditPositionModal = ref(false)
 const editingPosition = ref({})
 const electionId = route.params.id as string
+const showEditElection = ref(false)
+const showDeleteElection = ref(false)
+const showDeleteConfirm = ref(false)
+const deleteTarget = ref<{ type: 'position'|'candidate'; id: string } | null>(null)
 
 const election = ref<any>(null)
 const positions = computed(() => {
   // Use positions from the election response if available, otherwise from electionPositions
   return election.value?.positions || electionStore.electionPositions || []
 })
+
+const fmt12h = (d?: string | Date) => {
+  if (!d) return '-'
+  const date = new Date(d)
+  const datePart = date.toLocaleDateString()
+  const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+  return `${datePart} ${timePart}`
+}
 
 const goBack = () => {
   router.back()
@@ -38,23 +51,6 @@ const editPosition = (position: any) => {
   showPositionModal.value = true
 }
 
-const deletePosition = async (positionId: string) => {
-  if (
-    !confirm(
-      'Are you sure you want to delete this position? This will also delete all candidates for this position.',
-    )
-  )
-    return
-
-  try {
-    await electionStore.deletePosition(positionId)
-    // Refresh positions to update the UI
-    await fetchElectionAndPositions()
-  } catch (error) {
-    console.error('Failed to delete position:', error)
-  }
-}
-
 const fetchElectionAndPositions = async () => {
   election.value = await electionStore.fetchElectionDetails(electionId)
 }
@@ -65,9 +61,47 @@ const goToVote = () => {
   })
 }
 
+const goToResults = () => {
+  router.push(`/elections/${electionId}/results`).catch((err) => {
+    console.error('Navigation error:', err)
+  })
+}
+
 onMounted(() => {
   fetchElectionAndPositions()
 })
+
+const handleElectionSaved = async () => {
+  await fetchElectionAndPositions()
+}
+
+const confirmDeleteElection = () => {
+  showDeleteElection.value = true
+}
+
+const performDeleteElection = async () => {
+  try {
+    await electionStore.deleteElection(electionId)
+    showDeleteElection.value = false
+    router.push('/elections')
+  } catch (e) {
+    showDeleteElection.value = false
+  }
+}
+
+const performDeleteAction = async () => {
+  if (!deleteTarget.value) return
+  try {
+    if (deleteTarget.value.type === 'position') {
+      await electionStore.deletePosition(deleteTarget.value.id)
+    }
+    // candidate deletion handled in PositionDetail scope; here we only cover positions listing
+    await fetchElectionAndPositions()
+  } finally {
+    showDeleteConfirm.value = false
+    deleteTarget.value = null
+  }
+}
 </script>
 
 <template>
@@ -90,6 +124,20 @@ onMounted(() => {
         <h1 class="text-3xl font-bold text-gray-900">{{ election?.title }}</h1>
         <div class="flex items-center gap-4">
           <BaseBtn
+            class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-blue-50 border-2 text-blue-700 px-4 py-2 rounded-lg cursor-pointer"
+            @click="showEditElection = true"
+            v-if="election.status === 'upcoming'"
+          >
+            Edit Election
+          </BaseBtn>
+          <BaseBtn
+            class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-red-50 border-2 text-red-700 px-4 py-2 rounded-lg cursor-pointer"
+            @click="confirmDeleteElection"
+            v-if="election.status === 'upcoming'"
+          >
+            Delete Election
+          </BaseBtn>
+          <BaseBtn
             class="inline-flex text-sm items-center gap-2 bg-inherit hover:bg-green-50 border-2 text-green-700 px-4 py-2 rounded-lg cursor-pointer"
             @click="showPositionModal = true"
             v-if="election.status !== 'active' && election.status !== 'completed'"
@@ -99,8 +147,16 @@ onMounted(() => {
           <BaseBtn
             class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
             @click="goToVote"
+            v-if="election.status === 'active'"
           >
             Cast Vote
+          </BaseBtn>
+          <BaseBtn
+            v-if="election?.status === 'completed' || election?.can_view_results || election?.can_review_results"
+            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
+            @click="goToResults"
+          >
+            View Results
           </BaseBtn>
         </div>
       </div>
@@ -113,19 +169,19 @@ onMounted(() => {
       >
         <div>
           <span class="text-gray-500">Start Date:</span>
-          <p class="font-medium">{{ new Date(election?.start_date).toLocaleString() }}</p>
+          <p class="font-medium">{{ fmt12h(election?.start_date) }}</p>
         </div>
         <div>
           <span class="text-gray-500">End Date:</span>
-          <p class="font-medium">{{ new Date(election?.end_date).toLocaleString() }}</p>
+          <p class="font-medium">{{ fmt12h(election?.end_date) }}</p>
         </div>
         <div>
           <span class="text-gray-500">Total Positions:</span>
           <p class="font-medium">{{ positions.length }}</p>
         </div>
         <div>
-          <span class="text-gray-500">Total Votes:</span>
-          <p class="font-medium">{{ election?.total_votes || 0 }}</p>
+          <span class="text-gray-500">Total Ballots:</span>
+          <p class="font-medium">{{ election?.total_voters || 0 }}</p>
         </div>
       </div>
 
@@ -151,11 +207,7 @@ onMounted(() => {
               >
                 <Edit class="h-4 w-4" />
               </button>
-              <button
-                @click.stop="deletePosition(position.id)"
-                class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
-                title="Delete Position"
-              >
+              <button @click.stop="() => (deleteTarget = { type: 'position', id: position.id }, showDeleteConfirm = true)" class="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer" title="Delete Position">
                 <Trash2 class="h-4 w-4" />
               </button>
               <div class="flex items-center text-gray-400">
@@ -175,7 +227,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <PositionFormModal
+  <PositionFormModal
       :v-if="showPositionModal"
       :showModal="showPositionModal"
       :electionId="electionId"
@@ -183,5 +235,10 @@ onMounted(() => {
       @close="showPositionModal = false"
       @save="fetchElectionAndPositions"
     />
+
+  <ElectionFormModal :show="showEditElection" :election="election" @close="showEditElection = false" @saved="handleElectionSaved" />
+  <ConfirmModal :show="showDeleteElection" title="Delete Election" message="This will permanently remove the election and its positions/candidates. Proceed?" confirmText="Delete" cancelText="Cancel" @close="showDeleteElection = false" @confirm="performDeleteElection" />
+
+  <ConfirmModal :show="showDeleteConfirm" title="Delete Position" message="This will permanently remove the position and its candidates. Proceed?" confirmText="Delete" cancelText="Cancel" @close="showDeleteConfirm = false" @confirm="performDeleteAction" />
   </div>
 </template>

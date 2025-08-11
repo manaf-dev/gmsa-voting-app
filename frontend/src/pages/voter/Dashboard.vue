@@ -162,6 +162,7 @@ onBeforeUnmount(() => {
                 <div>
                   <h4 class="font-semibold text-gray-900 text-lg">{{ election.title }}</h4>
                   <p class="text-sm text-gray-600 mt-1">{{ election.description }}</p>
+                  <p v-if="election.is_candidate" class="text-xs mt-1 px-2 py-1 inline-block rounded-full bg-amber-100 text-amber-800">You're a candidate</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500">
@@ -177,10 +178,18 @@ onBeforeUnmount(() => {
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
                   <router-link
+                    v-if="!(authStore.user?.active_elections_vote_status?.[election.id]) && !election.can_view_results"
                     :to="`/elections/${election.id}/vote`"
                     class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
                     🗳️ Cast Your Vote
+                  </router-link>
+                  <router-link
+                    v-else
+                    :to="`/elections/${election.id}/results`"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    📊 View Results
                   </router-link>
                   <router-link
                     :to="`/voter/elections/${election.id}`"
@@ -235,6 +244,47 @@ onBeforeUnmount(() => {
                   <router-link
                     :to="`/voter/elections/${election.id}`"
                     class="block w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-3 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    View Details
+                  </router-link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Completed Elections -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 text-center">Completed Elections</h3>
+          </div>
+          <div v-if="loading" class="p-6 text-center">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+            <p class="mt-2 text-sm text-gray-500">Loading elections...</p>
+          </div>
+          <div v-else-if="completedElections.length === 0" class="p-6 text-center text-gray-500">
+            No completed elections
+          </div>
+          <div v-else class="p-4 space-y-3">
+            <div v-for="election in completedElections" :key="election.id" class="border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all">
+              <div class="space-y-3">
+                <div>
+                  <h4 class="font-semibold text-gray-900 text-lg">{{ election.title }}</h4>
+                  <p class="text-sm text-gray-600 mt-1">{{ election.description }}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                  <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Completed</span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                  <router-link
+                    :to="`/elections/${election.id}/results`"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    📊 View Results
+                  </router-link>
+                  <router-link
+                    :to="`/voter/elections/${election.id}`"
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-4 rounded-lg font-medium transition-colors"
                   >
                     View Details
                   </router-link>

@@ -155,6 +155,10 @@ watch(
               <div class="mt-1 text-gray-900">{{ user?.last_name || 'Not provided' }}</div>
             </div>
             <div>
+              <div class="text-xs text-gray-500">Hall</div>
+              <div class="mt-1 text-gray-900">{{ user?.hall || 'Not provided' }}</div>
+            </div>
+            <div>
               <div class="text-xs text-gray-500">Phone Number</div>
               <div class="mt-1 text-gray-900 inline-flex items-center gap-2"><Phone class="w-4 h-4 text-gray-500" /> {{ user?.phone_number || 'Not provided' }}</div>
             </div>

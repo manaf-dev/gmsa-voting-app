@@ -15,6 +15,14 @@ const currentElection = ref<any>(null)
 const positions = ref<any[]>([])
 const loading = ref(false)
 
+const fmt12h = (d?: string | Date) => {
+  if (!d) return 'TBA'
+  const date = new Date(d)
+  const datePart = date.toLocaleDateString()
+  const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+  return `${datePart} ${timePart}`
+}
+
 const goBack = () => {
   router.back()
 }
@@ -87,13 +95,7 @@ onMounted(() => {
               <Calendar class="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
             <span class="text-xs sm:text-sm text-gray-500">Starts</span>
-            <span class="font-semibold text-gray-900 text-sm">
-              {{
-                currentElection?.start_date
-                  ? new Date(currentElection.start_date).toLocaleString()
-                  : 'TBA'
-              }}
-            </span>
+            <span class="font-semibold text-gray-900 text-sm">{{ fmt12h(currentElection?.start_date) }}</span>
           </div>
           <div class="flex flex-col items-center">
             <div
@@ -102,13 +104,7 @@ onMounted(() => {
               <Clock class="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
             </div>
             <span class="text-xs sm:text-sm text-gray-500">Ends</span>
-            <span class="font-semibold text-gray-900 text-sm">
-              {{
-                currentElection?.end_date
-                  ? new Date(currentElection.end_date).toLocaleString()
-                  : 'TBA'
-              }}
-            </span>
+            <span class="font-semibold text-gray-900 text-sm">{{ fmt12h(currentElection?.end_date) }}</span>
           </div>
           <div class="flex flex-col items-center">
             <div

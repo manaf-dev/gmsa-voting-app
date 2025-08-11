@@ -5,7 +5,7 @@ import BaseBtn from '@/components/BaseBtn.vue'
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { useElectionStore } from '@/stores/electionStore'
-import CreateElection from '@/modules/CreateElection.vue'
+import CreateElection from '@/modules/ElectionFormModal.vue'
 
 const router = useRouter()
 const electionStore = useElectionStore()

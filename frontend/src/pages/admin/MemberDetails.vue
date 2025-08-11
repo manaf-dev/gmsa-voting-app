@@ -5,6 +5,7 @@ import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import EditMemberModal from '@/modules/EditMember.vue'
 import { useRouter, useRoute } from 'vue-router'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useElectionStore } from '@/stores/electionStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from 'vue-toastification'
@@ -19,6 +20,8 @@ const member = ref<any>(null)
 const showEditModal = ref(false)
 const temporaryPassword = ref<string | null>(null) // show password temporarily
 const resetting = ref(false) // track reset button state
+const showRemoveConfirm = ref(false)
+const showResetConfirm = ref(false)
 
 const goBack = () => {
   router.back()
@@ -53,6 +56,30 @@ const resetMemberPassword = async () => {
   } finally {
     resetting.value = false
   }
+}
+
+const confirmRemove = () => {
+  showRemoveConfirm.value = true
+}
+
+const performRemove = async () => {
+  if (!member.value) return
+  try {
+    await electionStore.removeUser(member.value.id)
+    showRemoveConfirm.value = false
+    router.push('/admin/members')
+  } catch (e) {
+    showRemoveConfirm.value = false
+  }
+}
+
+const confirmReset = () => {
+  showResetConfirm.value = true
+}
+
+const performReset = async () => {
+  showResetConfirm.value = false
+  await resetMemberPassword()
 }
 </script>
 
@@ -122,12 +149,12 @@ const resetMemberPassword = async () => {
           >
             Edit
           </BaseBtn>
-          <BaseBtn class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+          <BaseBtn class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition" @click="confirmRemove">
             Remove
           </BaseBtn>
           <BaseBtn
             class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
-            @click="resetMemberPassword"
+            @click="confirmReset"
             :disabled="resetting"
           >
             {{ resetting ? 'Resetting...' : 'Reset Password' }}
@@ -138,12 +165,16 @@ const resetMemberPassword = async () => {
       <div v-else class="text-center text-gray-500 py-20">Loading member details...</div>
     </div>
 
-    <!-- Edit Modal -->
+  <!-- Edit Modal -->
     <EditMemberModal
       :show="showEditModal"
       :member="member"
       @close="showEditModal = false"
       @updated="handleUpdated"
     />
+
+  <!-- Confirm Modals -->
+  <ConfirmModal :show="showRemoveConfirm" title="Remove Member" message="This will remove the member from the system. Proceed?" confirmText="Remove" cancelText="Cancel" @close="showRemoveConfirm = false" @confirm="performRemove" />
+  <ConfirmModal :show="showResetConfirm" title="Reset Password" message="Reset this member's password and show the new temporary password?" confirmText="Reset" cancelText="Cancel" @close="showResetConfirm = false" @confirm="performReset" />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, watch, toRaw } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
@@ -15,10 +15,12 @@ const router = useRouter()
 
 const props = defineProps<{
   show: boolean
+  election?: any | null
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'saved', payload: any): void
 }>()
 
 const ElectionDetails = reactive({
@@ -28,19 +30,40 @@ const ElectionDetails = reactive({
   end_date: '',
 })
 
+watch(
+  () => props.election,
+  () => {
+    if (props.election) {
+      ElectionDetails.title = props.election.title || ''
+      ElectionDetails.description = props.election.description || ''
+      ElectionDetails.start_date = props.election.start_date
+        ? String(props.election.start_date).slice(0, 16)
+        : ''
+      ElectionDetails.end_date = props.election.end_date
+        ? String(props.election.end_date).slice(0, 16)
+        : ''
+    }
+  },
+  { immediate: true },
+)
+
 const SubmitElectionDetails = async () => {
   try {
-    // Create election and get response
-    const newElection = await electionStore.createElection(ElectionDetails)
-
-    if (newElection?.id) {
-      toast.success('Election Created!')
-      emit('close') // Close modal
-
-      // Redirect to election details page with the new election ID
-      router.push(`/elections/${newElection.id}`)
+    if (props.election?.id) {
+      const updated = await electionStore.updateElection(props.election.id, toRaw(ElectionDetails))
+      toast.success('Election updated!')
+      emit('saved', updated)
+      emit('close')
     } else {
-      toast.error('Election created but ID not found.')
+      const newElection = await electionStore.createElection(toRaw(ElectionDetails))
+      if (newElection?.id) {
+        toast.success('Election Created!')
+        emit('saved', newElection)
+        emit('close')
+        router.push(`/elections/${newElection.id}`)
+      } else {
+        toast.error('Election created but ID not found.')
+      }
     }
   } catch (error) {
     toast.error('Failed to create election')
@@ -51,7 +74,9 @@ const SubmitElectionDetails = async () => {
 <template>
   <BaseModal :show="show" @close="emit('close')">
     <form @submit.prevent="SubmitElectionDetails" class="">
-      <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create Election</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">
+        {{ props.election ? 'Edit Election' : 'Create Election' }}
+      </h1>
 
       <label class="block text-sm font-medium text-gray-700">
         Election Title
@@ -87,8 +112,8 @@ const SubmitElectionDetails = async () => {
         <BaseBtn
           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 border-2 text-white px-4 py-2 rounded-lg cursor-pointer"
         >
-          <Plus class="h-4 w-4" />
-          Create Election
+          <Plus class="h-4 w-4" v-if="!props.election" />
+          {{ props.election ? 'Save Changes' : 'Create Election' }}
         </BaseBtn>
       </div>
     </form>
