@@ -400,7 +400,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     """
 
     permission_classes = [AllowAny]
-    serializer_class = UserLoginSerializer
+    serializer_class = TokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
