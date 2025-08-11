@@ -144,18 +144,13 @@ onMounted(() => {
               </div>
 
               <div class="grid grid-cols-2 gap-3 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-500">Candidates:</span>
-                  <span class="font-medium">{{ position.candidates?.length || 0 }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500">Status:</span>
-                  <span class="font-medium text-green-600">Open</span>
+                <div class="flex justify-left">
+                  <span class="text-gray-500">Candidates: {{ position.candidates?.length || 0 }}</span>
                 </div>
               </div>
 
               <div class="pt-2 border-t border-gray-100">
-                <p class="text-xs text-green-600 font-medium">👆 Tap to view candidates</p>
+                <p class="text-xs text-green-600 font-medium">Tap to view candidates</p>
               </div>
             </div>
           </div>

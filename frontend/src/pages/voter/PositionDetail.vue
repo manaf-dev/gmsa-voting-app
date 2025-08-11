@@ -16,7 +16,6 @@ const selectedCandidate = ref(null)
 const loading = ref(false)
 
 const positionId = route.params.positionId as string
-const electionId = route.params.id as string
 const currentPosition = ref<any>(null)
 
 const goBack = () => {
@@ -63,19 +62,13 @@ onMounted(async () => {
       <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-6">
         <div class="text-center">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ currentPosition?.title }}</h1>
+        </div>
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-2 gap-4 mt-6 text-center">
           <p class="text-gray-600 mt-2 text-base sm:text-lg">
             {{ currentPosition?.description || 'No description provided' }}
           </p>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-2 gap-4 mt-6 text-center">
-          <div>
-            <span class="text-xs sm:text-sm text-gray-500">Election:</span>
-            <p class="font-semibold text-gray-900 text-sm">
-              {{ currentPosition?.election?.title }}
-            </p>
-          </div>
           <div>
             <span class="text-xs sm:text-sm text-gray-500">Candidates:</span>
             <p class="font-semibold text-gray-900 text-sm">
@@ -107,11 +100,10 @@ onMounted(async () => {
           >
             <!-- Candidate Header -->
             <div class="flex items-center gap-3 mb-3">
-              <div
-                class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0"
-              >
-                <User class="h-6 w-6 text-green-600" />
-              </div>
+              <div class="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                      <img v-if="candidate.profile_picture" :src="candidate.profile_picture" alt="" class="w-12 h-12 object-cover" />
+                      <span v-else class="text-primary-600 font-medium">PO</span>
+                    </div>
               <div class="flex-1 min-w-0">
                 <h3 class="font-semibold text-gray-900 truncate">
                   {{ candidate.user?.display_name || 'Name N/A' }}
@@ -134,11 +126,11 @@ onMounted(async () => {
                 <span class="text-xs text-gray-500 font-medium">Program:</span>
                 <p class="text-sm">{{ candidate.user.program }}</p>
               </div>
-              <div v-if="candidate.manifesto">
+              <!-- <div v-if="candidate.manifesto">
                 <span class="text-xs text-gray-500 font-medium">Manifesto:</span>
                 <p class="text-sm text-gray-700 mt-1 line-clamp-3">{{ candidate.manifesto }}</p>
-                <p class="text-xs text-green-600 mt-1 font-medium">👆 Tap to read full manifesto</p>
-              </div>
+              </div> -->
+              <p class="text-xs text-green-600 mt-1 font-medium">Tap to see full details</p>
             </div>
           </div>
         </div>

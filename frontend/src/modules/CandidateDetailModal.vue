@@ -50,6 +50,7 @@ const candidateInfo = computed(() => {
     manifesto: props.candidate.manifesto || 'No manifesto provided',
     voteCount: props.candidate.vote_count || 0,
     dateJoined: props.candidate.user?.date_joined || null,
+    profile_url: props.candidate.profile_picture
   }
 })
 </script>
@@ -85,8 +86,9 @@ const candidateInfo = computed(() => {
             <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <User class="h-8 w-8 text-green-600" />
+                  <div class="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                      <img v-if="candidateInfo.profile_url" :src="candidateInfo.profile_url" alt="" class="w-12 h-12 object-cover" />
+                      <span v-else class="text-primary-600 font-medium">CA</span>
                   </div>
                   <div>
                     <h2 class="text-2xl font-bold text-gray-900">
@@ -138,7 +140,7 @@ const candidateInfo = computed(() => {
               </div>
 
               <!-- Manifesto -->
-              <div class="bg-white border border-gray-200 rounded-lg p-4">
+              <!-- <div class="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FileText class="h-5 w-5 text-gray-600" />
                   Manifesto
@@ -148,9 +150,9 @@ const candidateInfo = computed(() => {
                     {{ candidateInfo.manifesto }}
                   </p>
                 </div>
-              </div>
+              </div> -->
 
-              <!-- Additional Information -->
+              <!-- Additional Information
               <div v-if="candidateInfo.dateJoined" class="bg-blue-50 rounded-lg p-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
                   <Calendar class="h-5 w-5 text-gray-600" />
@@ -159,7 +161,7 @@ const candidateInfo = computed(() => {
                 <p class="text-sm text-gray-600">
                   Member since: {{ new Date(candidateInfo.dateJoined).toLocaleDateString() }}
                 </p>
-              </div>
+              </div> -->
             </div>
 
             <!-- Footer -->
