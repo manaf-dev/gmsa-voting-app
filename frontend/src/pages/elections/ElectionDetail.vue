@@ -39,8 +39,13 @@ const editPosition = (position: any) => {
 }
 
 const deletePosition = async (positionId: string) => {
-  if (!confirm('Are you sure you want to delete this position? This will also delete all candidates for this position.')) return
-  
+  if (
+    !confirm(
+      'Are you sure you want to delete this position? This will also delete all candidates for this position.',
+    )
+  )
+    return
+
   try {
     await electionStore.deletePosition(positionId)
     // Refresh positions to update the UI
@@ -117,7 +122,10 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl" v-if="positions.length">
+      <div
+        class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl"
+        v-if="positions.length"
+      >
         <div
           v-for="position in positions"
           :key="position.id"
@@ -158,17 +166,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div v-else class="text-center py-12 text-gray-500">
-        <User class="h-16 w-16 mx-auto mb-4 text-gray-300" />
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No positions available</h3>
-        <BaseBtn
-          class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer"
-          @click="showPositionModal = true" v-if="election.status !== 'active' && election.status !== 'completed'"
-        >
-          <Plus class="h-4 w-4" />
-          Add First Position
-        </BaseBtn>
-      </div>
     </div>
 
     <PositionFormModal
@@ -179,6 +176,5 @@ onMounted(() => {
       @close="showPositionModal = false"
       @save="fetchElectionAndPositions"
     />
-    
   </div>
 </template>

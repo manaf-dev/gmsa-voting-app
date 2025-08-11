@@ -43,7 +43,7 @@ const SubmitUserDetails = async () => {
 
 <template>
   <BaseModal :show="show" @close="emit('close')">
-    <form @submit.prevent="SubmitUserDetails">
+    <form @submit.prevent="SubmitUserDetails" class="max-h-[80vh] overflow-y-auto">
       <h1 class="text-2xl font-bold text-gray-900 text-center mb-2">Add Member</h1>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
