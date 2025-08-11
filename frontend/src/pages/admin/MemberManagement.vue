@@ -95,7 +95,7 @@ const lastPage = () => {
     <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24">
       <div class="bg-white shadow">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div>
+          <div class="max-w-sm">
             <label class="block text-sm font-medium text-gray-700">Search</label>
             <BaseInput
               v-model="searchQuery"
