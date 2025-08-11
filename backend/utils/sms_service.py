@@ -244,6 +244,24 @@ Login: {settings.FRONTEND_URL}/login
 - GMSA Electoral Commission"""
 
     @staticmethod
+    def results_published(election_data: Dict, user_data: Dict) -> str:
+        """
+        Results published notification
+
+        Args:
+            election_data: Dict with title, results_url
+            user_data: Dict with first_name
+        """
+        return f"""GMSA Election Results Published
+
+Hello {user_data.get('first_name', 'Student')},
+
+Official results for '{election_data.get('title')}' are now available.
+View results: {election_data.get('results_url')}
+
+- GMSA Electoral Commission"""
+
+    @staticmethod
     def dues_payment_reminder(user_data: Dict, academic_year: str) -> str:
         """
         Dues payment reminder

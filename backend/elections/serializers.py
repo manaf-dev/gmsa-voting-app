@@ -21,7 +21,13 @@ class CandidateSerializer(serializers.ModelSerializer):
         data["user"] = UserSerializer(instance.user).data
         data["vote_count"] = instance.vote_count
         data["vote_percentage"] = instance.vote_percentage
-        data["profile_picture"] = absolute_media_url_builder(self.context["request"], instance.profile_picture.url)
+        # Add absolute URL for profile picture if present
+        try:
+            if instance.profile_picture:
+                req = self.context.get("request") if hasattr(self, "context") else None
+                data["profile_picture_url"] = absolute_media_url_builder(req, instance.profile_picture.url)
+        except Exception:
+            pass
         return data
 
 
@@ -49,6 +55,7 @@ class ElectionSerializer(serializers.ModelSerializer):
         model = Election
         fields = "__all__"
 
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["created_by"] = {
@@ -57,11 +64,36 @@ class ElectionSerializer(serializers.ModelSerializer):
             "email": instance.created_by.email,
         }
         data["positions"] = PositionSerializer(instance.positions.all(), many=True, context=self.context).data
-        data["created_by_name"] = instance.created_by.display_name
         data["total_votes"] = instance.total_votes
         data["total_voters"] = instance.total_voters
         data["is_active"] = instance.is_active
         data["can_vote"] = instance.can_vote
+        # Results publishing flags and derived permissions
+        data["results_published"] = getattr(instance, "results_published", False)
+        data["results_published_at"] = getattr(instance, "results_published_at", None)
+        request = self.context.get("request") if hasattr(self, "context") else None
+        user = getattr(request, "user", None)
+        # Candidate spotlight flag
+        try:
+            from .models import Candidate as Cand
+            data["is_candidate"] = bool(user and user.is_authenticated and Cand.objects.filter(position__election=instance, user=user).exists())
+        except Exception:
+            data["is_candidate"] = False
+        can_review = bool(getattr(user, "is_ec_member", False) and instance.status == "completed" and not data["results_published"])
+        data["can_review_results"] = can_review
+        data["can_archive"] = bool((getattr(user, "is_ec_member", False) or getattr(user, "is_staff", False)) and instance.status == "completed" and data["results_published"]) 
+        user_voted = False
+        try:
+            if user and user.is_authenticated:
+                from .models import Vote
+                user_voted = Vote.has_user_voted_in_election(user, instance)
+        except Exception:
+            user_voted = False
+        data["can_view_results"] = bool(
+            data["results_published"]
+            or (getattr(user, "is_ec_member", False) and instance.status == "completed")
+            or (instance.show_results_after_voting and instance.status in ["active", "completed"] and user_voted)
+        )
         return data
 
 
@@ -69,6 +101,9 @@ class ElectionListSerializer(serializers.ModelSerializer):
     total_votes = serializers.ReadOnlyField()
     total_voters = serializers.ReadOnlyField()
     is_active = serializers.ReadOnlyField()
+    results_published = serializers.ReadOnlyField()
+    can_view_results = serializers.SerializerMethodField()
+    is_candidate = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(
         source="created_by.display_name", read_only=True
     )
@@ -97,9 +132,37 @@ class ElectionListSerializer(serializers.ModelSerializer):
             "total_votes",
             "total_voters",
             "is_active",
+            "results_published",
+            "can_view_results",
+            "is_candidate",
             "created_by_name",
             "created_at",
         )
+
+    def get_can_view_results(self, obj):
+        request = self.context.get("request") if hasattr(self, "context") else None
+        user = getattr(request, "user", None)
+        user_voted = False
+        try:
+            if user and user.is_authenticated:
+                from .models import Vote
+                user_voted = Vote.has_user_voted_in_election(user, obj)
+        except Exception:
+            user_voted = False
+        return bool(
+            getattr(obj, "results_published", False)
+            or (getattr(user, "is_ec_member", False) and obj.status == "completed")
+            or (obj.show_results_after_voting and obj.status in ["active", "completed"] and user_voted)
+        )
+
+    def get_is_candidate(self, obj):
+        request = self.context.get("request") if hasattr(self, "context") else None
+        user = getattr(request, "user", None)
+        try:
+            from .models import Candidate as Cand
+            return bool(user and user.is_authenticated and Cand.objects.filter(position__election=obj, user=user).exists())
+        except Exception:
+            return False
 
 
 class VoteSerializer(serializers.ModelSerializer):

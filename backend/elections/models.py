@@ -11,6 +11,7 @@ class Election(models.Model):
         ("upcoming", "Upcoming"),
         ("active", "Active"),
         ("completed", "Completed"),
+        ("archived", "Archived"),
         ("cancelled", "Cancelled"),
     ]
 
@@ -32,6 +33,9 @@ class Election(models.Model):
     allow_multiple_votes_per_position = models.BooleanField(default=False)
     require_dues_payment = models.BooleanField(default=False)
     show_results_after_voting = models.BooleanField(default=False)
+    # Results publishing workflow
+    results_published = models.BooleanField(default=False)
+    results_published_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -55,13 +59,20 @@ class Election(models.Model):
 
     @property
     def total_voters(self):
-        """Count unique voters in this election using anonymous tokens"""
-        return (
-            Vote.objects.filter(election_id=self.id)
-            .values("anonymous_voter_token")
-            .distinct()
-            .count()
-        )
+        """Count unique voters in this election by decrypting voter_id and deduplicating.
+        Note: This preserves anonymity externally and runs server-side only.
+        """
+        from .crypto import VotingCrypto
+
+        crypto = VotingCrypto()
+        voter_ids = set()
+        for v in Vote.objects.filter(election_id=self.id).only("encrypted_vote_data"):
+            try:
+                data = crypto.decrypt_vote_data(v.encrypted_vote_data)
+                voter_ids.add(data.get("voter_id"))
+            except Exception:
+                continue
+        return len(voter_ids)
 
 
 class Position(models.Model):
@@ -454,6 +465,23 @@ class Vote(models.Model):
             vote_map[str(eid)] = True
 
         return vote_map
+
+    @classmethod
+    def has_user_voted_in_election(cls, voter, election) -> bool:
+        """Check if the given voter has any vote in the specified election using anonymous tokens."""
+        from .crypto import VotingCrypto
+        from .models import Position
+
+        positions = list(Position.objects.filter(election=election).values_list("id", flat=True))
+        if not positions:
+            return False
+
+        crypto = VotingCrypto()
+        tokens = [
+            crypto.anonymize_voter_data(str(voter.id), str(election.id), str(pid))
+            for pid in positions
+        ]
+        return cls.objects.filter(election_id=election.id, anonymous_voter_token__in=tokens).exists()
 
 
 class ElectionResult(models.Model):

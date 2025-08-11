@@ -26,12 +26,12 @@ from .serializers import (
     ElectionResultSerializer,
 )
 from .crypto import check_security_configuration
+from utils.helpers import absolute_media_url_builder
 from docs.elections import (
     list_create_elections_schema,
     retrieve_update_delete_election_schema,
     cast_vote_schema,
     election_results_schema,
-    generate_results_schema,
     list_create_positions_schema,
     retrieve_update_delete_position_schema,
     list_create_candidates_schema,
@@ -57,7 +57,7 @@ class ElectionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         if self.request.user.is_ec_member or self.request.user.is_staff:
             return Election.objects.all()
-        return Election.objects.filter(status__in=["upcoming", "active"])
+        return Election.objects.filter(status__in=["upcoming", "active", "completed"]) 
 
     def perform_create(self, serializer):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
@@ -79,6 +79,13 @@ class ElectionDetailView(generics.RetrieveUpdateDestroyAPIView):
                     "You can only view active or upcoming elections"
                 )
         return election
+
+    # perform partial updates
+    def perform_update(self, serializer):
+        print('updating...')
+        if not (self.request.user.is_ec_member or self.request.user.is_staff):
+            raise permissions.PermissionDenied("Only EC members can update elections")
+        serializer.save(created_by=self.request.user)
 
 
 @cast_vote_schema
@@ -232,13 +239,19 @@ import secrets
 def election_results(request, election_id):
     election = get_object_or_404(Election, id=election_id)
 
-    # Only EC members, staff, or if results are public
-    if not (
-        request.user.is_ec_member
-        or request.user.is_staff
-        or election.show_results_after_voting
-        or election.status == "completed"
-    ):
+    # Permissions: voters see only when published; EC can review after completion but before publish
+    can_view = False
+    if getattr(election, "results_published", False):
+        can_view = True
+    elif request.user.is_ec_member or request.user.is_staff:
+        can_view = election.status == "completed"
+    elif election.show_results_after_voting and election.status in ["active", "completed"]:
+        try:
+            can_view = Vote.has_user_voted_in_election(request.user, election)
+        except Exception:
+            can_view = False
+
+    if not can_view:
         return Response(
             {"error": "Results are not yet available"}, status=status.HTTP_403_FORBIDDEN
         )
@@ -254,6 +267,7 @@ def election_results(request, election_id):
                     "student_id": candidate.user.student_id,
                     "vote_count": candidate.vote_count,
                     "vote_percentage": candidate.vote_percentage,
+                    "profile_picture_url": absolute_media_url_builder(request, candidate.profile_picture.url) if getattr(candidate, "profile_picture", None) else None,
                 }
             )
 
@@ -287,65 +301,97 @@ def election_results(request, election_id):
             }
         )
 
+    # Compute eligibility and turnout
+    total_eligible_voters = User.objects.filter(is_active=True).count()
+    total_votes_cast = election.total_votes
+    total_unique_voters = election.total_voters
+    voter_turnout = (total_unique_voters / total_eligible_voters * 100) if total_eligible_voters else 0
+
+    # Persist summary for admins
+    try:
+        if request.user.is_ec_member or request.user.is_staff:
+            ElectionResult.objects.update_or_create(
+                election=election,
+                defaults={
+                    "total_eligible_voters": total_eligible_voters,
+                    "total_votes_cast": total_votes_cast,
+                    "voter_turnout_percentage": voter_turnout,
+                    "generated_by": request.user,
+                },
+            )
+    except Exception:
+        pass
+
     return Response(
         {
             "election": {
                 "id": str(election.id),
                 "title": election.title,
                 "status": election.status,
-                "total_votes": election.total_votes,
-                "total_voters": election.total_voters,
+                "results_published": getattr(election, "results_published", False),
+                "results_published_at": getattr(election, "results_published_at", None),
+                "start_date": election.start_date,
+                "end_date": election.end_date,
+                "can_review_results": bool((request.user.is_ec_member or request.user.is_staff) and election.status == "completed" and not getattr(election, "results_published", False)),
+                "can_archive": bool((request.user.is_ec_member or request.user.is_staff) and election.status == "completed" and getattr(election, "results_published", False)),
+                "total_votes": total_votes_cast,
+                "total_voters": total_unique_voters,
+                "total_eligible_voters": total_eligible_voters,
+                "voter_turnout_percentage": voter_turnout,
             },
             "positions": positions_with_results,
         }
     )
 
-
-@generate_results_schema
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
-def generate_election_results(request, election_id):
+def publish_election_results(request, election_id):
+    """Admin publishes results after election is completed; triggers SMS to voters."""
     if not (request.user.is_ec_member or request.user.is_staff):
-        return Response(
-            {"error": "Only EC members can generate official results"},
-            status=status.HTTP_403_FORBIDDEN,
-        )
+        return Response({"error": "Only EC members can publish results"}, status=status.HTTP_403_FORBIDDEN)
 
     election = get_object_or_404(Election, id=election_id)
+    if election.status != "completed":
+        return Response({"error": "Election must be completed before publishing"}, status=status.HTTP_400_BAD_REQUEST)
+    if getattr(election, "results_published", False):
+        return Response({"message": "Results already published"})
 
-    # Calculate results
-    from accounts.models import User
+    election.results_published = True
+    election.results_published_at = timezone.now()
+    election.save(update_fields=["results_published", "results_published_at"])
 
-    total_eligible_voters = User.objects.filter(is_active=True).count()
-    total_votes_cast = election.total_votes
-    voter_turnout = (
-        (election.total_voters / total_eligible_voters * 100)
-        if total_eligible_voters > 0
-        else 0
-    )
+    # Notify voters via SMS (best effort)
+    try:
+        from accounts.models import User
+        from utils.tasks import send_bulk_results_published_sms_task
+        voter_ids = list(User.objects.filter(is_active=True).values_list("id", flat=True))
+        if voter_ids:
+            send_bulk_results_published_sms_task.delay(str(election.id), voter_ids)
+    except Exception:
+        pass
 
-    # Create or update result record
-    result, created = ElectionResult.objects.update_or_create(
-        election=election,
-        defaults={
-            "total_eligible_voters": total_eligible_voters,
-            "total_votes_cast": total_votes_cast,
-            "voter_turnout_percentage": voter_turnout,
-            "generated_by": request.user,
-        },
-    )
+    return Response({"message": "Results published"})
 
-    # Mark election as completed if not already
-    if election.status == "active":
-        election.status = "completed"
-        election.save()
 
-    return Response(
-        {
-            "message": "Election results generated successfully",
-            "result": ElectionResultSerializer(result).data,
-        }
-    )
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def archive_election(request, election_id):
+    """Admin archives an election after results are published. Voters won't see archived in lists."""
+    if not (request.user.is_ec_member or request.user.is_staff):
+        return Response({"error": "Only EC members can archive elections"}, status=status.HTTP_403_FORBIDDEN)
+
+    election = get_object_or_404(Election, id=election_id)
+    if election.status != "completed":
+        return Response({"error": "Only completed elections can be archived"}, status=status.HTTP_400_BAD_REQUEST)
+    if not getattr(election, "results_published", False):
+        return Response({"error": "Publish results before archiving"}, status=status.HTTP_400_BAD_REQUEST)
+
+    election.status = "archived"
+    election.save(update_fields=["status"])
+
+    return Response({"message": "Election archived"})
+
+
 
 
 # Position Views

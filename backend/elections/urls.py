@@ -10,9 +10,14 @@ urlpatterns = [
         "<uuid:election_id>/results/", views.election_results, name="election-results"
     ),
     path(
-        "<uuid:election_id>/generate-results/",
-        views.generate_election_results,
-        name="generate-results",
+        "<uuid:election_id>/publish/",
+        views.publish_election_results,
+        name="publish-results",
+    ),
+    path(
+        "<uuid:election_id>/archive/",
+        views.archive_election,
+        name="archive-election",
     ),
     # Position URLs
     path(

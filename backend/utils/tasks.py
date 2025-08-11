@@ -14,6 +14,7 @@ import uuid
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.conf import settings
 from utils.sms_service import (
     SMSService,
     SMSMessageTemplates,
@@ -288,3 +289,33 @@ def update_election_statuses(self) -> Dict[str, Any]:
     except Exception as exc:
         logger.error(f"update_election_statuses failed: {str(exc)}")
         return {"success": False, "error": str(exc)}
+
+
+@shared_task(bind=True, max_retries=3)
+def send_bulk_results_published_sms_task(self, election_id: str, user_ids: list) -> Dict[str, Any]:
+    """Send 'results published' SMS to a list of users."""
+    try:
+        from elections.models import Election
+        election = Election.objects.get(id=election_id)
+        users = User.objects.filter(id__in=user_ids, is_active=True)
+        recipients = []
+        for u in users:
+            if not u.phone_number:
+                continue
+            message = SMSMessageTemplates.results_published({
+                "title": election.title,
+                "results_url": f"{getattr(settings, 'FRONTEND_URL', '').rstrip('/')}/elections/{election.id}/results",
+            }, {
+                "first_name": u.first_name or u.username,
+            })
+            recipients.append({"phone": u.phone_number, "message": message})
+
+        if not recipients:
+            return {"success": True, "total": 0}
+
+        sms_service = SMSService()
+        result = sms_service.send_bulk_sms(recipients)
+        return result
+    except Exception as exc:
+        logger.error(f"send_bulk_results_published_sms_task failed: {str(exc)}")
+        raise self.retry(countdown=120, exc=exc)
