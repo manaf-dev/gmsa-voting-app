@@ -209,7 +209,7 @@ Please change your password after first login.
         """
         return f"""GMSA Password Reset
 
-Hello {user_data.get('first_name', 'Student')},
+Assalamu alaikum,
 
 Your password has been reset by EC:
 Username: {user_data['username']}
@@ -231,7 +231,7 @@ Please change this password immediately.
         """
         return f"""GMSA Voting Reminder
 
-Hello {user_data.get('first_name', 'Student')},
+Assalamu alaikum,
 
 Election: {election_data['title']}
 Voting ends: {election_data['end_date']}
@@ -252,7 +252,7 @@ Login: {settings.FRONTEND_URL}/login
         """
         return f"""GMSA Election Results Published
 
-Hello {user_data.get('first_name', 'Student')},
+Assalamu alaikum,
 
 Official results for '{election_data.get('title')}' are now available.
 View results: {election_data.get('results_url')}
@@ -270,7 +270,7 @@ View results: {election_data.get('results_url')}
         """
         return f"""GMSA Dues Reminder
 
-Hello {user_data.get('first_name', 'Student')},
+Assalamu alaikum,
 
 Your dues for {academic_year} are unpaid.
 Pay now to be eligible for voting.

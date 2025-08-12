@@ -239,9 +239,6 @@ onMounted(() => {
             Vote - {{ currentElection?.title || 'Election' }}
           </h1>
         </div>
-        <div class="text-sm text-gray-600" v-if="!showSummary && !hasVoted">
-          <span>Step {{ currentPositionIndex + 1 }} of {{ totalPositions }}</span>
-        </div>
       </div>
     </nav>
 
@@ -379,6 +376,9 @@ onMounted(() => {
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium text-gray-700">
               {{ currentPosition?.title }}
+            </span>
+            <span class="text-sm text-gray-500">
+              {{ currentPositionIndex + 1 }} of {{ totalPositions }}
             </span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2">

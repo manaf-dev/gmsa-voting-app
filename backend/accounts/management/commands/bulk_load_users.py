@@ -132,6 +132,8 @@ class Command(BaseCommand):
                     email = row.get("email", "").strip()
                     username = row.get("username", "").strip()
                     password = row.get("password", "").strip()
+                    program = row.get("program", "").strip()
+                    year_of_study = row.get("year_of_study", "").strip()
 
                     # Validate required fields
                     if not all([student_id, first_name, last_name, phone_number]):
@@ -155,7 +157,7 @@ class Command(BaseCommand):
 
                     # Generate email if not provided
                     if not email:
-                        email = f"{username}@student.aamusted.edu.gh"
+                        email = f"{username}@aamustedgmsa.org"
 
                     # Check if user exists
                     user_exists = User.objects.filter(student_id=student_id).exists()
@@ -201,6 +203,8 @@ class Command(BaseCommand):
                             first_name=first_name,
                             last_name=last_name,
                             phone_number=phone_number,
+                            program=program,
+                            year_of_study=year_of_study,
                         )
 
                         self.stdout.write(
@@ -279,13 +283,13 @@ class Command(BaseCommand):
     ) -> str:
         """Generate username from first name, last name, and student ID"""
         # Clean names
-        first_clean = first_name.lower().replace(" ", "")
-        last_clean = last_name.lower().replace(" ", "")
+        first_clean = first_name.capitalize().replace(" ", "")
+        last_clean = last_name.capitalize().replace(" ", "")
 
         # Try different username patterns
         patterns = [
-            f"{first_clean}{last_clean[:2]}",
             f"{first_clean}_{last_clean[:2]}",
+            f"{first_clean}_{last_clean[:3]}",
             f"{first_clean}.{last_clean[:2]}",
             f"{first_clean}{last_clean[:3]}",
             f"user{student_id}",
