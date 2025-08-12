@@ -37,7 +37,7 @@ urlpatterns = [
         name="candidate-list-create",
     ),
     path(
-        "candidates/<int:pk>/",
+        "candidates/<uuid:pk>/",
         views.CandidateDetailView.as_view(),
         name="candidate-detail",
     ),
@@ -46,7 +46,7 @@ urlpatterns = [
     path("admin/members/", views.admin_members, name="admin-members"),
     path("admin/members/export/", views.export_members, name="export-members"),
     path(
-        "admin/members/<int:member_id>/reminder/",
+        "admin/members/<uuid:member_id>/reminder/",
         views.send_reminder,
         name="send-reminder",
     ),
