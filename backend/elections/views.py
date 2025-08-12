@@ -158,7 +158,7 @@ def cast_vote(request):
                 VotingSession.objects.create(
                     user=request.user,
                     election=election,
-                    ip_address=request.META.get("REMOTE_ADDR"),
+                    ip_address=request.META.get("HTTP_X_REAL_IP", request.META.get("HTTP_X_FORWARDED_FOR")),
                     user_agent=request.META.get("HTTP_USER_AGENT", ""),
                     votes_cast=len(created_votes),
                 )
