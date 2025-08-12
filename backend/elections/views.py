@@ -512,7 +512,23 @@ class CandidateListCreateView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer.save(position=position, user=candidate_user)
+        candidate = serializer.save(position=position, user=candidate_user)
+
+        # Send SMS notification (best-effort)
+        try:
+            from utils.sms_service import SMSService
+            if candidate_user.phone_number:
+                sms = SMSService()
+                election_title = position.election.title
+                position_title = position.title
+                message = (
+                    f"Assalamu Alaikum. You have been registered as a candidate for the position of '{position_title}' in the GMSA election: {election_title}. All the best"
+                    f"- GMSA EC"
+                )
+                sms.send_single_sms(candidate_user.phone_number, message)
+        except Exception:
+            # Silent fail; internal logging in SMS service captures errors
+            pass
 
 
 @retrieve_update_delete_candidate_schema
