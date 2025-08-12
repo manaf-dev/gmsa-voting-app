@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ArrowBigLeft } from 'lucide-vue-next'
+import { ArrowBigLeft, Eye, EyeOff } from 'lucide-vue-next'
 import BaseBtn from '@/components/BaseBtn.vue'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from 'vue-toastification'
 
@@ -12,6 +12,8 @@ const UserDetails = reactive({
   username: '',
   password: '',
 })
+
+const showPassword = ref(false)
 
 const SubmitUserDetails = async () => {
   try {
@@ -56,14 +58,25 @@ const SubmitUserDetails = async () => {
 
           <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
             Password
-            <input
-              v-model="UserDetails.password"
-              type="password"
-              required
-              autocomplete="current-password"
-              class="w-full px-3 py-2 border mt-1 border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 ring-gray-500"
-              placeholder="Enter your password"
-            />
+            <div class="relative mt-1">
+              <input
+                v-model="UserDetails.password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                autocomplete="current-password"
+                class="w-full pr-11 px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 outline-none focus:ring-2 ring-gray-500"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
+                @click="showPassword = !showPassword"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <EyeOff v-if="showPassword" class="h-5 w-5" />
+                <Eye v-else class="h-5 w-5" />
+              </button>
+            </div>
           </label>
 
           <BaseBtn

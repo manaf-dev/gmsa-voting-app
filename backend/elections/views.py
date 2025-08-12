@@ -2,6 +2,7 @@ from rest_framework import generics, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
@@ -57,10 +58,10 @@ class ElectionListCreateView(generics.ListCreateAPIView):
         if self.request.user.is_ec_member or self.request.user.is_staff:
             return Election.objects.all()
         return Election.objects.filter(status__in=["upcoming", "active", "completed"]) 
-
     def perform_create(self, serializer):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can create elections")
+            raise PermissionDenied("Only EC members can create elections")
+        serializer.save(created_by=self.request.user)
         serializer.save(created_by=self.request.user)
 
 
@@ -72,17 +73,17 @@ class ElectionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         election = super().get_object()
-        if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            if election.status not in ["upcoming", "active"]:
-                raise permissions.PermissionDenied(
-                    "You can only view active or upcoming elections"
-                )
+        # if not (self.request.user.is_ec_member or self.request.user.is_staff):
+            # if election.status not in ["upcoming", "active"]:
+            #     raise PermissionDenied(
+            #         "You can only view active or upcoming elections"
+            #     )
         return election
 
     # perform partial updates
     def perform_update(self, serializer):
-        print('updating...')
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
+            raise PermissionDenied("Only EC members can update elections")
             raise permissions.PermissionDenied("Only EC members can update elections")
         serializer.save(created_by=self.request.user)
 
@@ -402,10 +403,9 @@ class PositionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         election_id = self.kwargs.get("election_id")
         return Position.objects.filter(election_id=election_id).order_by("order")
-
     def perform_create(self, serializer):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can create positions")
+            raise PermissionDenied("Only EC members can create positions")
 
         election_id = self.kwargs.get("election_id")
         election = get_object_or_404(Election, id=election_id)
@@ -428,17 +428,16 @@ class PositionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         position = super().get_object()
-        # Regular users can view positions for upcoming/active elections
-        if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            if position.election.status not in ["upcoming", "active"]:
-                raise permissions.PermissionDenied(
-                    "You can only view positions for active or upcoming elections"
-                )
+        # if not (self.request.user.is_ec_member or self.request.user.is_staff):
+        #     if position.election.status not in ["upcoming", "active"]:
+        #         raise PermissionDenied(
+        #             "You can only view positions for active or upcoming elections"
+        #         )
+                
         return position
-
     def perform_update(self, serializer):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can update positions")
+            raise PermissionDenied("Only EC members can update positions")
 
         position = self.get_object()
         if position.election.status in ["active", "completed"]:
@@ -448,10 +447,9 @@ class PositionDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
 
         serializer.save()
-
     def perform_destroy(self, instance):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can delete positions")
+            raise PermissionDenied("Only EC members can delete positions")
 
         if instance.election.status in ["active", "completed"]:
             return Response(
@@ -481,10 +479,9 @@ class CandidateListCreateView(generics.ListCreateAPIView):
         return Candidate.objects.filter(position_id=position_id).order_by(
             "user__student_id"
         )
-
     def perform_create(self, serializer):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can add candidates")
+            raise PermissionDenied("Only EC members can add candidates")
 
         position_id = self.kwargs.get("position_id")
         position = get_object_or_404(Position, id=position_id)
@@ -526,26 +523,26 @@ class CandidateDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         candidate = super().get_object()
-        # Regular users can view candidates for upcoming/active elections
-        if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            if candidate.position.election.status not in ["upcoming", "active"]:
-                raise permissions.PermissionDenied(
-                    "You can only view candidates for active or upcoming elections"
-                )
+        # if not (self.request.user.is_ec_member or self.request.user.is_staff):
+        #     if candidate.position.election.status not in ["upcoming", "active"]:
+        #         raise PermissionDenied(
+        #             "You can only view candidates for active or upcoming elections"
+        #         )
+                
         return candidate
 
     def perform_update(self, serializer):
         candidate = self.get_object()
 
-        # Allow the candidate themselves to update their own info
         if not (
             self.request.user.is_ec_member
             or self.request.user.is_staff
             or self.request.user == candidate.user
         ):
-            raise permissions.PermissionDenied(
+            raise PermissionDenied(
                 "Only EC members or the candidate can update candidate information"
             )
+            
 
         # Don't allow updates during active elections (except manifesto/profile)
         if candidate.position.election.status == "active":
@@ -567,10 +564,9 @@ class CandidateDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
 
         serializer.save()
-
     def perform_destroy(self, instance):
         if not (self.request.user.is_ec_member or self.request.user.is_staff):
-            raise permissions.PermissionDenied("Only EC members can remove candidates")
+            raise PermissionDenied("Only EC members can remove candidates")
 
         if instance.position.election.status in ["active", "completed"]:
             return Response(
@@ -595,9 +591,8 @@ class CandidateDetailView(generics.RetrieveUpdateDestroyAPIView):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def admin_stats(request):
-    """Get election statistics for admin dashboard"""
     if not (request.user.is_ec_member or request.user.is_staff):
-        raise permissions.PermissionDenied("Only EC members can access admin stats")
+        raise PermissionDenied("Only EC members can access admin stats")
 
     # Intentionally minimal; add more aggregates as needed
 
@@ -615,9 +610,8 @@ def admin_stats(request):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def admin_members(request):
-    """Get all members for admin management"""
     if not (request.user.is_ec_member or request.user.is_staff):
-        raise permissions.PermissionDenied("Only EC members can access member data")
+        raise PermissionDenied("Only EC members can access member data")
 
     from django.core.paginator import Paginator
     from accounts.serializers import UserSerializer
@@ -672,9 +666,8 @@ def admin_members(request):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def export_members(request):
-    """Export members data as CSV"""
     if not (request.user.is_ec_member or request.user.is_staff):
-        raise permissions.PermissionDenied("Only EC members can export member data")
+        raise PermissionDenied("Only EC members can export member data")
 
     import csv
     from django.http import HttpResponse
@@ -724,9 +717,8 @@ def export_members(request):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def send_reminder(request, member_id):
-    """Send payment reminder to a member"""
     if not (request.user.is_ec_member or request.user.is_staff):
-        raise permissions.PermissionDenied("Only EC members can send reminders")
+        raise PermissionDenied("Only EC members can send reminders")
 
     try:
         member = User.objects.get(id=member_id)
