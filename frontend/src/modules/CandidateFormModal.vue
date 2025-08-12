@@ -29,7 +29,7 @@ const candidateDetails = reactive({
   user: '',
   manifesto: '',
   order: '0',
-  file: null as File | null,
+  profile_picture: null as File | null,
   filePreview: '' as string,
 })
 
@@ -37,33 +37,25 @@ const candidateDetails = reactive({
 watch(
   () => props.editingCandidate,
   (newCandidate) => {
-    // revoke existing preview if any
-    if (candidateDetails.filePreview) {
-      try {
-        URL.revokeObjectURL(candidateDetails.filePreview)
-      } catch (e) {
-        // ignore
-      }
-    }
 
     if (newCandidate) {
-      candidateDetails.user = newCandidate.user?.id || ''
+      console.log('Editing candidate:', newCandidate)
+      candidateDetails.user = newCandidate.user?.id
       candidateDetails.manifesto = newCandidate.manifesto || ''
       candidateDetails.order = String(newCandidate.order || 0)
-      candidateDetails.file = null
-      candidateDetails.filePreview = ''
-      // if you have a server image URL on newCandidate, you can set it here:
-      // candidateDetails.filePreview = newCandidate.photo_url || ''
+      // candidateDetails.profile_picture = newCandidate.profile_picture
+      // candidateDetails.filePreview = URL.createObjectURL(newCandidate.profile_picture) || ''
+      
     } else {
       candidateDetails.user = ''
       candidateDetails.manifesto = ''
       candidateDetails.order = '0'
-      candidateDetails.file = null
+      candidateDetails.profile_picture = null
       candidateDetails.filePreview = ''
     }
 
     // clear the native file input value
-    if (fileInput.value) fileInput.value.value = ''
+    // if (fileInput.value) fileInput.value.value = ''
   },
   { immediate: true },
 )
@@ -80,7 +72,7 @@ const handleFileChange = (event: Event) => {
       }
     }
     const f = target.files[0]
-    candidateDetails.file = f
+    candidateDetails.profile_picture = f
     candidateDetails.filePreview = URL.createObjectURL(f)
   }
 }
@@ -93,7 +85,7 @@ const removeFile = () => {
       // ignore
     }
   }
-  candidateDetails.file = null
+  candidateDetails.profile_picture = null
   candidateDetails.filePreview = ''
   if (fileInput.value) fileInput.value.value = ''
 }
@@ -115,8 +107,8 @@ const submitCandidateDetails = async () => {
     formData.append('manifesto', candidateDetails.manifesto)
     formData.append('order', candidateDetails.order)
     formData.append('position', props.positionId)
-    if (candidateDetails.file) {
-      formData.append('profile_picture', candidateDetails.file)
+    if (candidateDetails.profile_picture) {
+      formData.append('profile_picture', candidateDetails.profile_picture)
     }
 
     if (props.editingCandidate) {

@@ -234,7 +234,11 @@ export const useElectionStore = defineStore('election', () => {
       const response = await apiInstance.put(
         `/elections/candidates/${candidateId}/`,
         candidateDetails,
-        
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       )
 
       

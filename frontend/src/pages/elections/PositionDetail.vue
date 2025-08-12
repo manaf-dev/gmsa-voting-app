@@ -223,7 +223,7 @@ onMounted(async () => {
       :show="showCandidateFormModal"
       :positionId="positionId"
       :editingCandidate="editingCandidate"
-      @close="showCandidateFormModal = false"
+      @close="showCandidateFormModal = false; editingCandidate = null"
       @save="fetchData()"
     />
 
