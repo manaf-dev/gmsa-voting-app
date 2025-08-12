@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, watch, ref, onBeforeUnmount } from 'vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseTextArea from '@/components/BaseTextArea.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
@@ -7,7 +7,7 @@ import BaseModal from '@/components/BaseModal.vue'
 import UserSearchDropdown from '@/components/UserSearchDropdown.vue'
 import { useToast } from 'vue-toastification'
 import { useElectionStore } from '@/stores/electionStore'
-import { Plus, Save } from 'lucide-vue-next'
+import { Plus, Save, X } from 'lucide-vue-next'
 
 const electionStore = useElectionStore()
 const toast = useToast()
@@ -23,43 +23,107 @@ const emit = defineEmits<{
   (e: 'save'): void
 }>()
 
+const fileInput = ref<HTMLInputElement | null>(null)
+
 const candidateDetails = reactive({
   user: '',
   manifesto: '',
   order: '0',
+  file: null as File | null,
+  filePreview: '' as string,
 })
 
 // Watch for editing candidate changes
 watch(
   () => props.editingCandidate,
   (newCandidate) => {
+    // revoke existing preview if any
+    if (candidateDetails.filePreview) {
+      try {
+        URL.revokeObjectURL(candidateDetails.filePreview)
+      } catch (e) {
+        // ignore
+      }
+    }
+
     if (newCandidate) {
       candidateDetails.user = newCandidate.user?.id || ''
       candidateDetails.manifesto = newCandidate.manifesto || ''
       candidateDetails.order = String(newCandidate.order || 0)
+      candidateDetails.file = null
+      candidateDetails.filePreview = ''
+      // if you have a server image URL on newCandidate, you can set it here:
+      // candidateDetails.filePreview = newCandidate.photo_url || ''
     } else {
-      // Reset form for new candidate
       candidateDetails.user = ''
       candidateDetails.manifesto = ''
       candidateDetails.order = '0'
+      candidateDetails.file = null
+      candidateDetails.filePreview = ''
     }
+
+    // clear the native file input value
+    if (fileInput.value) fileInput.value.value = ''
   },
   { immediate: true },
 )
 
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    // revoke previous preview if present
+    if (candidateDetails.filePreview) {
+      try {
+        URL.revokeObjectURL(candidateDetails.filePreview)
+      } catch (e) {
+        // ignore
+      }
+    }
+    const f = target.files[0]
+    candidateDetails.file = f
+    candidateDetails.filePreview = URL.createObjectURL(f)
+  }
+}
+
+const removeFile = () => {
+  if (candidateDetails.filePreview) {
+    try {
+      URL.revokeObjectURL(candidateDetails.filePreview)
+    } catch (e) {
+      // ignore
+    }
+  }
+  candidateDetails.file = null
+  candidateDetails.filePreview = ''
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+onBeforeUnmount(() => {
+  if (candidateDetails.filePreview) {
+    try {
+      URL.revokeObjectURL(candidateDetails.filePreview)
+    } catch (e) {
+      // ignore
+    }
+  }
+})
+
 const submitCandidateDetails = async () => {
   try {
-    const payload = {
-      ...candidateDetails,
-      order: parseInt(candidateDetails.order) || 0,
-      position: props.positionId,
+    const formData = new FormData()
+    formData.append('user', candidateDetails.user)
+    formData.append('manifesto', candidateDetails.manifesto)
+    formData.append('order', candidateDetails.order)
+    formData.append('position', props.positionId)
+    if (candidateDetails.file) {
+      formData.append('profile_picture', candidateDetails.file)
     }
 
     if (props.editingCandidate) {
-      await electionStore.updateCandidate(props.editingCandidate.id, payload)
+      await electionStore.updateCandidate(props.editingCandidate.id, formData)
       toast.success('Candidate updated successfully!')
     } else {
-      await electionStore.createCandidate(props.positionId, payload)
+      await electionStore.createCandidate(props.positionId, formData)
       toast.success('Candidate created successfully!')
     }
     emit('save')
@@ -78,18 +142,25 @@ const submitCandidateDetails = async () => {
       </h1>
 
       <div class="space-y-4">
-        <label class="block text-sm font-medium text-gray-700">
-          Candidate
-          <UserSearchDropdown
-            v-model="candidateDetails.user"
-            :selected-user-id="candidateDetails.user"
-            placeholder="Search for a user by name, student ID, or email..."
-            required
-          />
-          <p class="text-xs text-gray-500 mt-1">
-            Select the user who will be the candidate for this position
-          </p>
-        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="block text-sm font-medium text-gray-700">
+            Candidate
+            <UserSearchDropdown
+              v-model="candidateDetails.user"
+              :selected-user-id="candidateDetails.user"
+              placeholder="Search for a user by name, student ID, or email..."
+              required
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              Select the user who will be the candidate for this position
+            </p>
+          </label>
+
+          <label class="block text-sm font-medium text-gray-700">
+            Order (Optional)
+            <BaseInput v-model="candidateDetails.order" type="number" placeholder="0" min="0" />
+          </label>
+        </div>
 
         <label class="block text-sm font-medium text-gray-700">
           Manifesto
@@ -100,10 +171,34 @@ const submitCandidateDetails = async () => {
           />
         </label>
 
+        <!-- File upload with fully rounded preview -->
         <label class="block text-sm font-medium text-gray-700">
-          Order (Optional)
-          <BaseInput v-model="candidateDetails.order" type="number" placeholder="0" min="0" />
-          <p class="text-xs text-gray-500 mt-1">Display order for this candidate</p>
+          Upload Picture (Optional)
+          <div v-if="candidateDetails.filePreview" class="mt-2 relative inline-block">
+            <img
+              :src="candidateDetails.filePreview"
+              alt="Preview"
+              class="h-24 w-24 object-cover rounded-full border-2 border-gray-200"
+            />
+            <button
+              type="button"
+              @click="removeFile"
+              aria-label="Remove image"
+              class="absolute -top-2 -right-2 bg-white text-red-600 rounded-full p-1 shadow hover:bg-gray-50"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
+          <div v-else class="mt-1">
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              @change="handleFileChange"
+              class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            />
+            <p class="text-xs text-gray-500 mt-1">Attach a candidate's picture (JPG, PNG, etc.)</p>
+          </div>
         </label>
       </div>
 
