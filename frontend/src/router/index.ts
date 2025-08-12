@@ -122,6 +122,11 @@ const router = createRouter({
       path: '/help',
       name: 'help',
       component: () => import('../pages/voter/Help.vue')
+    },
+    {
+      path: '/exhibition',
+      name: 'exhibition',
+      component: () => import('../pages/voter/Exhibition.vue')
     }
   ]
 })
