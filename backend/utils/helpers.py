@@ -5,8 +5,8 @@ from rest_framework.request import HttpRequest
 
 def _generate_password(length: int = 10) -> str:
     """Generate a secure random password"""
-    # Use letters, digits, and some safe punctuation
-    characters = string.ascii_letters + string.digits + string.punctuation
+    # Use letters and digits
+    characters = string.ascii_letters + string.digits
     return "".join(secrets.choice(characters) for _ in range(length))
 
 

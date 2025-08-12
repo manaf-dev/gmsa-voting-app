@@ -15,13 +15,18 @@ const UserDetails = reactive({
 
 const showPassword = ref(false)
 
+const loading = ref(false)
+
 const SubmitUserDetails = async () => {
+  if (loading.value) return
+  loading.value = true
   try {
-    console.log(UserDetails)
     await authStore.login(UserDetails)
     toast.success('Login successful!')
   } catch (error) {
     toast.error('Invalid credentials')
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -80,9 +85,30 @@ const SubmitUserDetails = async () => {
           </label>
 
           <BaseBtn
-            class="w-full btn btn-primary py-3 mt-5 flex items-center justify-center cursor-pointer"
+            :disabled="loading"
+            class="w-full btn btn-primary py-3 mt-5 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed gap-2"
           >
-            Login
+            <svg
+              v-if="loading"
+              class="animate-spin h-5 w-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>{{ loading ? 'Signing in...' : 'Login' }}</span>
           </BaseBtn>
 
           <!-- <div class="mt-5 text-center">

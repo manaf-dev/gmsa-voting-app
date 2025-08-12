@@ -12,6 +12,7 @@ from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from .models import Payment, DuesPayment, Donation, PaymentCallback
+from utils.sms_service import SMSService
 from .serializers import (
     PaymentSerializer,
     InitiatePaymentSerializer,
@@ -28,7 +29,6 @@ class InitiatePaymentView(APIView):
         serializer = InitiatePaymentSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         payment_type = serializer.validated_data["payment_type"]
         amount = serializer.validated_data.get("amount")
         academic_year = serializer.validated_data.get("academic_year")
@@ -79,6 +79,14 @@ class InitiatePaymentView(APIView):
         # Create payment record
         payment_metadata = serializer.validated_data.copy()
         payment_metadata["academic_year"] = academic_year
+        # Convert any Decimal values inside metadata to float for JSONField compatibility
+        for k, v in list(payment_metadata.items()):
+            try:
+                from decimal import Decimal as _D
+                if isinstance(v, _D):
+                    payment_metadata[k] = float(v)
+            except Exception:  # noqa: BLE001
+                pass
 
         payment = Payment.objects.create(
             user=request.user if request.user.is_authenticated else None,
@@ -134,7 +142,7 @@ class InitiatePaymentView(APIView):
                         "reference": reference,
                         "authorization_url": result["data"]["authorization_url"],
                         "access_code": result["data"]["access_code"],
-                        "amount": amount,
+                        "amount": float(amount),
                         "currency": "GHS",
                         "academic_year": academic_year,
                         "payment_type": payment_type,
@@ -225,12 +233,29 @@ class PaystackWebhookView(APIView):
                 elif payment.payment_type == "donation":
                     # Create donation record
                     metadata = payment.metadata or {}
-                    Donation.objects.create(
+                    donation = Donation.objects.create(
                         payment=payment,
                         donor_name=metadata.get("donor_name", ""),
                         message=metadata.get("message", ""),
                         is_anonymous=metadata.get("is_anonymous", True),
                     )
+
+                    # Attempt SMS notification (best-effort, don't fail transaction)
+                    try:
+                        # Notify donor if user exists and has phone number and is not anonymous
+                        if (
+                            payment.user
+                            and payment.user.phone_number
+                            and not donation.is_anonymous
+                        ):
+                            sms = SMSService()
+                            amount_str = f"{payment.amount:.2f} {payment.currency}"
+                            msg = (
+                                f"Alhamdulillah! Your GMSA donation of {amount_str} was received. Jazakallahu Khairan."
+                            )
+                            sms.send_single_sms(payment.user.phone_number, msg)
+                    except Exception:  # noqa: BLE001
+                        pass  # Log silently (service already logs internally)
 
         except Payment.DoesNotExist:
             pass  # Log this error in production
@@ -393,3 +418,15 @@ def payment_stats(request):
             },
         }
     )
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def payment_config(request):
+    """Expose public configuration needed by frontend (e.g., Paystack public key)."""
+    from django.conf import settings
+
+    return Response({
+        "paystack_public_key": getattr(settings, "PAYSTACK_PUBLIC_KEY", ""),
+        "currency": "GHS",
+    })

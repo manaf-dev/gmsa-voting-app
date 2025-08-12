@@ -7,4 +7,5 @@ urlpatterns = [
     path("verify/<str:reference>/", views.verify_payment, name="verify-payment"),
     path("my-payments/", views.user_payments, name="user-payments"),
     path("stats/", views.payment_stats, name="payment-stats"),
+    path("config/", views.payment_config, name="payment-config"),
 ]

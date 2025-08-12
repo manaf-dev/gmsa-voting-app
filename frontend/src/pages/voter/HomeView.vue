@@ -1,388 +1,105 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
-const authStore = useAuthStore()
 
-const stats = ref({
-  totalMembers: 0,
-  activeElections: 0,
-  totalVotes: 0,
-})
+// Attempt to load the logo asset (currently stored as 'gmsalogo' without extension)
+// If build fails, rename asset to gmsalogo.jpg and update path accordingly.
+let logoSrc: string | undefined
+try {
+  // @ts-ignore - Vite will resolve at runtime if recognized as an asset
+  logoSrc = new URL('@/assets/gmsalogo.png', import.meta.url).href
+} catch (e) {
+  logoSrc = ''
+}
 
-const features = [
-  {
-    icon: 'vote',
-    title: 'Secure Voting',
-    description: 'Cast your votes securely in GMSA elections with our tamper-proof system',
-  },
-  {
-    icon: 'payment',
-    title: 'Easy Payments',
-    description: 'Pay your annual dues and make donations using multiple payment methods',
-  },
-  {
-    icon: 'admin',
-    title: 'Election Management',
-    description: 'EC members can create and manage elections with comprehensive controls',
-  },
-  {
-    icon: 'results',
-    title: 'Real-time Results',
-    description: 'View election results and statistics as they unfold',
-  },
+const primaryActions = [
+  { label: 'Login', to: '/login', style: 'bg-green-600 hover:bg-green-700 text-white' },
+  { label: 'Donate to GMSA', to: '/payment/donation', style: 'bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur' },
 ]
 
-onMounted(() => {
-  // Mock stats for now - these would come from API
-  stats.value = {
-    totalMembers: 1250,
-    activeElections: 2,
-    totalVotes: 892,
-  }
-})
+const pillars = [
+  { title: 'Faith', body: 'Upholding Islamic values while fostering academic excellence.' },
+  { title: 'Service', body: 'Community impact through outreach, charity and mentorship.' },
+  { title: 'Leadership', body: 'Building disciplined, visionary student leaders for the Ummah.' },
+]
 
-const navigateToAuth = (route: string) => {
-  router.push(route)
-}
+const go = (to: string) => router.push(to)
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50">
-    <!-- Navigation -->
-    <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <h1 class="text-2xl font-bold text-primary-600">GMSA</h1>
-            </div>
-            <div class="ml-4">
-              <span class="text-sm text-gray-600">Ghana Muslim Students Association</span>
-            </div>
+  <div class="min-h-screen flex flex-col bg-gradient-to-b from-green-50 via-white to-white">
+    <!-- Minimal Nav -->
+    <header class="w-full">
+      <div class="max-w-6xl mx-auto flex items-center justify-between px-5 py-3 sm:py-4">
+        <div class="flex items-center gap-3">
+          <div class="relative h-11 w-11 flex items-center justify-center">
+            <img v-if="logoSrc" :src="logoSrc" alt="GMSA Logo" class="h-11 w-11 object-contain drop-shadow" />
+            <div v-else class="h-11 w-11 rounded-lg bg-green-600 text-white flex items-center justify-center font-bold text-lg">G</div>
           </div>
-
-          <div class="flex items-center space-x-4">
-              <router-link to="/login" class="btn btn-outline px-4 py-2">Login</router-link>
-              <!-- <router-link to="/dashboard" class="btn btn-primary px-4 py-2">
-                Dashboard
-              </router-link>
-              <button
-                @click="(authStore.logout(), router.push('/'))"
-                class="btn btn-outline px-4 py-2"
-              >
-                Logout
-              </button> -->
-          </div>
-
-          <!-- <template v-else>
-              <router-link to="/dashboard" class="btn btn-primary px-4 py-2">
-                Dashboard
-              </router-link>
-            </template> -->
-          <!-- </div> -->
+            <div class="leading-tight">
+              <p class="font-semibold text-gray-800 text-sm sm:text-base">AAMUSTED GMSA</p>
+              <p class="text-[10px] sm:text-[11px] text-gray-500 tracking-wide uppercase">Ghana Muslim Students Association</p>
+            </div>
         </div>
+        <nav class="flex items-center gap-2 sm:gap-3">
+          <router-link to="/login" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:text-white hover:bg-green-600 transition-colors">Login</router-link>
+          <router-link to="/payment/donation" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors">Donate</router-link>
+        </nav>
       </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <section class="relative py-20 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto text-center">
-        <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-          Democratic Elections for
-          <span class="text-primary-600"> GMSA</span>
-        </h1>
-        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Secure, transparent, and accessible voting platform for the Ghana Muslim Students
-          Association. Make your voice heard in shaping our community's future.
-        </p>
-
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <template>
-            <router-link to="/register" class="btn btn-primary px-8 py-3 text-lg">
-              Join GMSA Today
-            </router-link>
-            <router-link to="/login" class="btn btn-outline px-8 py-3 text-lg">
-              Already a Member?
-            </router-link>
-          </template>
-          <template>
-            <router-link to="/elections" class="btn btn-primary px-8 py-3 text-lg">
-              View Elections
-            </router-link>
-            <router-link to="/dashboard" class="btn btn-outline px-8 py-3 text-lg">
-              My Dashboard
-            </router-link>
-          </template>
+    <!-- Hero -->
+    <main class="flex-1">
+      <section class="relative px-6 pt-10 pb-16 sm:pt-16 sm:pb-20 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div class="absolute -top-24 -right-16 h-72 w-72 bg-green-100 rounded-full blur-3xl opacity-60"></div>
+          <div class="absolute top-1/3 -left-20 h-64 w-64 bg-emerald-100 rounded-full blur-3xl opacity-50"></div>
         </div>
-      </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="py-16 bg-white/50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="text-center">
-            <div
-              class="bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-primary-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-3xl font-bold text-gray-900">
-              {{ stats.totalMembers.toLocaleString() }}
-            </h3>
-            <p class="text-gray-600">Registered Members</p>
-          </div>
-
-          <div class="text-center">
-            <div
-              class="bg-secondary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-secondary-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-3xl font-bold text-gray-900">{{ stats.activeElections }}</h3>
-            <p class="text-gray-600">Active Elections</p>
-          </div>
-
-          <div class="text-center">
-            <div
-              class="bg-accent-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-accent-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-3xl font-bold text-gray-900">
-              {{ stats.totalVotes.toLocaleString() }}
-            </h3>
-            <p class="text-gray-600">Votes Cast</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="py-16 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Why Choose Our Platform?</h2>
-          <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-            Built with security, transparency, and accessibility in mind
+        <div class="relative max-w-4xl mx-auto text-center">
+          <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
+            AAMUSTED <span class="text-green-600">GMSA</span>
+          </h1>
+          <p class="mt-4 text-gray-600 text-sm sm:text-lg leading-relaxed max-w-2xl mx-auto">
+            A faith-driven student community devoted to spiritual growth, academic excellence,
+            leadership development and service to humanity on the AAMUSTED campus.
           </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div class="text-center">
-            <div class="bg-primary-100 rounded-lg p-6 mb-4">
-              <svg
-                class="w-12 h-12 text-primary-600 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure Voting</h3>
-            <p class="text-gray-600">
-              End-to-end encryption ensures your vote remains private and secure
-            </p>
-          </div>
-
-          <div class="text-center">
-            <div class="bg-secondary-100 rounded-lg p-6 mb-4">
-              <svg
-                class="w-12 h-12 text-secondary-600 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Transparent Process</h3>
-            <p class="text-gray-600">
-              Real-time results and complete audit trails for full transparency
-            </p>
-          </div>
-
-          <div class="text-center">
-            <div class="bg-accent-100 rounded-lg p-6 mb-4">
-              <svg
-                class="w-12 h-12 text-accent-600 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Mobile Friendly</h3>
-            <p class="text-gray-600">Vote from anywhere using your smartphone or computer</p>
-          </div>
-
-          <div class="text-center">
-            <div class="bg-primary-100 rounded-lg p-6 mb-4">
-              <svg
-                class="w-12 h-12 text-primary-600 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Easy Payments</h3>
-            <p class="text-gray-600">Secure dues payment and donation system integrated</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="py-16 bg-primary-600">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-3xl font-bold text-white mb-4">Ready to Make Your Voice Heard?</h2>
-        <p class="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-          Join thousands of GMSA members who are actively participating in shaping our community's
-          future.
-        </p>
-
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <template>
-            <router-link
-              to="/register"
-              class="bg-white text-primary-600 hover:bg-gray-50 px-8 py-3 rounded-md font-semibold transition-colors"
+          <p class="mt-3 text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
+            Together in Faith, Knowledge and Service.
+          </p>
+          <div class="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              v-for="a in primaryActions"
+              :key="a.label"
+              @click="go(a.to)"
+              class="group px-7 py-3 rounded-lg text-sm sm:text-base font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all backdrop-blur"
+              :class="[
+                a.to === '/login' ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-600/40' : 'border border-green-500/40 text-green-700 hover:bg-green-600 hover:text-white'
+              ]"
             >
-              Get Started Today
-            </router-link>
-            <router-link
-              to="/payment/donation"
-              class="border border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 rounded-md font-semibold transition-colors"
-            >
-              Support GMSA
-            </router-link>
-          </template>
-          <template>
-            <router-link
-              to="/elections"
-              class="bg-white text-primary-600 hover:bg-gray-50 px-8 py-3 rounded-md font-semibold transition-colors"
-            >
-              View Elections
-            </router-link>
-            <router-link
-              to="/payment/donation"
-              class="border border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 rounded-md font-semibold transition-colors"
-            >
-              Make a Donation
-            </router-link>
-          </template>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <h3 class="text-2xl font-bold mb-4">GMSA</h3>
-            <p class="text-gray-400">
-              Ghana Muslim Students Association - Building unity, fostering growth, and empowering
-              voices in our community.
-            </p>
-          </div>
-
-          <div>
-            <h4 class="font-semibold mb-4">Quick Links</h4>
-            <ul class="space-y-2 text-gray-400">
-              <li>
-                <router-link to="/elections" class="hover:text-white transition-colors"
-                  >Elections</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/payment/dues" class="hover:text-white transition-colors"
-                  >Pay Dues</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/payment/donation" class="hover:text-white transition-colors"
-                  >Donate</router-link
-                >
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 class="font-semibold mb-4">Contact</h4>
-            <p class="text-gray-400">
-              Email: info@gmsa.edu.gh<br />
-              Phone: +233 XX XXX XXXX
-            </p>
+              <span class="inline-flex items-center gap-1">
+                {{ a.label }}
+                <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </span>
+            </button>
           </div>
         </div>
+      </section>
 
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Ghana Muslim Students Association. All rights reserved.</p>
+      <!-- Pillars (very short) -->
+      <section class="px-6 pb-14">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+          <div v-for="p in pillars" :key="p.title" class="bg-white rounded-xl border border-green-100/70 shadow-sm p-5 text-center hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-gray-900 tracking-wide text-sm uppercase mb-2">{{ p.title }}</h3>
+            <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ p.body }}</p>
+          </div>
         </div>
-      </div>
+      </section>
+    </main>
+
+    <!-- Compact footer -->
+    <footer class="border-t border-gray-200 py-6 text-center text-xs text-gray-500">
+      <p>&copy; {{ new Date().getFullYear() }} AAMUSTED GMSA. All rights reserved.</p>
     </footer>
   </div>
 </template>
