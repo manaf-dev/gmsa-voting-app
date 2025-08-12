@@ -5,6 +5,12 @@ from .views import (
     send_voting_reminders,
 )
 from .views import CookieTokenObtainPairView, CookieTokenRefreshView, JWTLogoutView
+from .exhibition import (
+    ExhibitionLookupView,
+    ExhibitionRegisterView,
+    ExhibitionPendingListView,
+    ExhibitionVerifyView,
+)
 
 urlpatterns = [
     path("register/", UserViewset.as_view({"post": "register_user"}), name="register"),
@@ -52,4 +58,9 @@ urlpatterns = [
     path("jwt/login/", CookieTokenObtainPairView.as_view(), name="jwt-login"),
     path("jwt/refresh/", CookieTokenRefreshView.as_view(), name="jwt-refresh"),
     path("jwt/logout/", JWTLogoutView.as_view(), name="jwt-logout"),
+    # Exhibition (public register check)
+    path("exhibition/lookup/", ExhibitionLookupView.as_view(), name="exhibition-lookup"),
+    path("exhibition/register/", ExhibitionRegisterView.as_view(), name="exhibition-register"),
+    path("exhibition/pending/", ExhibitionPendingListView.as_view(), name="exhibition-pending"),
+    path("exhibition/verify/<uuid:user_id>/", ExhibitionVerifyView.as_view(), name="exhibition-verify"),
 ]

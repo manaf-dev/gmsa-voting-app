@@ -9,6 +9,19 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useElectionStore } from '@/stores/electionStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from 'vue-toastification'
+import api from '@/services/api'
+const verifying = ref(false)
+async function verifyExhibitionUser(id: string){
+  try {
+    verifying.value = true
+    await api.post(`/accounts/exhibition/verify/${id}/`)
+    if (member.value) member.value.can_vote = true
+    toast.success('User verified and SMS queued')
+  } catch (e:any){
+    const msg = e?.response?.data?.detail || 'Verification failed'
+    toast.error(msg)
+  } finally { verifying.value = false }
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -97,7 +110,7 @@ const performReset = async () => {
       </template>
     </NavBar>
 
-    <div class="max-w-3xl mx-auto px-4 py-6 pt-20 sm:pt-24">
+  <div class="max-w-3xl mx-auto px-4 py-6 pt-20 sm:pt-24">
       <div v-if="member" class="bg-white rounded-lg shadow-md overflow-hidden">
         <!-- Show temporary password -->
         <div
@@ -143,6 +156,14 @@ const performReset = async () => {
 
         <!-- Actions -->
         <div class="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200">
+          <BaseBtn
+            v-if="!member.can_vote"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            :disabled="verifying"
+            @click="verifyExhibitionUser(member.id)"
+          >
+            {{ verifying ? 'Verifying...' : 'Verify & Enable Voting' }}
+          </BaseBtn>
           <BaseBtn
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
             @click="showEditModal = true"
