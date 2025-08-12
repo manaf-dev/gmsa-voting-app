@@ -26,13 +26,13 @@ const UserDetails = reactive({
   year_of_study: '',
   program: '',
   admission_year: '',
-  password: '',
-  confirm_password: '',
+  // password: '',
+  // confirm_password: '',
 })
 
 const SubmitUserDetails = async () => {
   try {
-    await authStore.register(UserDetails)
+    await authStore.addNewUser(UserDetails)
     toast.success('Registration successful!')
     emit('close') // Close modal on success
   } catch (error) {
@@ -136,7 +136,7 @@ const SubmitUserDetails = async () => {
           </select>
         </label>
 
-        <label class="block text-sm font-medium text-gray-700 mt-2">
+        <!-- <label class="block text-sm font-medium text-gray-700 mt-2">
           Password <span class="text-orange-500">*</span>
           <BaseInput
             v-model="UserDetails.password"
@@ -154,15 +154,15 @@ const SubmitUserDetails = async () => {
             placeholder="Confirm your password"
             required
           />
-        </label>
+        </label> -->
       </div>
 
-      <div class="w-max m-auto">
+      <div class="w-max mx-auto mt-4">
         <BaseBtn
           type="submit"
           class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg cursor-pointer"
         >
-          Register
+          Add
         </BaseBtn>
       </div>
     </form>

@@ -44,7 +44,7 @@ onMounted(() => {
           class="flex items-center gap-1 text-gray-700 hover:bg-gray-50 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
           @click="goBack"
         >
-          <ArrowLeft /> Back
+          <ArrowLeft />
         </BaseBtn>
       </template>
 

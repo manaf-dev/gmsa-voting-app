@@ -42,7 +42,7 @@ const SubmitElectionDetails = async () => {
           @click="goBack"
           class="flex items-center gap-1 text-blue-300 hover:bg-blue-50 mb-4 hover:gap-1.5 transition-all ease-in-out duration-200 py-1 px-3 rounded-full cursor-pointer"
         >
-          <ArrowLeft class="w-5 h-5 text-gray-700" /> Back
+          <ArrowLeft class="w-5 h-5 text-gray-700" />
         </button>
         <h1 class="text-2xl font-bold text-gray-900">Create New Election</h1>
         <p class="mt-1 text-sm text-gray-600 mb-4">Set up a new election for GMSA members</p>
