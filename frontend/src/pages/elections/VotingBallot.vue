@@ -227,7 +227,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white/80 border-b border-gray-200 sticky top-0 w-full">
+    <nav class="bg-white border-b border-gray-200 sticky top-0 w-full">
       <div
         class="max-w-6xl w-full mx-auto px-4 lg:px-8 flex justify-between items-center py-3 md:py-5"
       >
@@ -302,8 +302,17 @@ onMounted(() => {
               <div v-if="position.candidates?.length === 1">
                 <!-- Yes/No vote -->
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <User class="h-5 w-5 text-green-600" />
+                  <div class="shrink-0">
+                    <img
+                      v-if="position.candidates[0].profile_picture_url || position.candidates[0].profile_picture"
+                      :src="position.candidates[0].profile_picture_url || position.candidates[0].profile_picture"
+                      :alt="position.candidates[0].user?.display_name || 'Candidate photo'"
+                      loading="lazy"
+                      class="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border border-gray-200 mx-auto md:mx-0"
+                    />
+                    <div v-else class="w-40 h-40 md:w-48 md:h-48 bg-green-50 rounded-full flex items-center justify-center border border-gray-200 mx-auto md:mx-0">
+                      <User class="h-16 w-16 md:h-20 md:w-20 text-green-600" />
+                    </div>
                   </div>
                   <div>
                     <p class="font-medium">{{ position.candidates[0].user?.display_name }}</p>
@@ -320,8 +329,17 @@ onMounted(() => {
               <div v-else>
                 <!-- Candidate selection -->
                 <div v-if="votes[position.id]" class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <User class="h-5 w-5 text-green-600" />
+                  <div class="shrink-0">
+                    <img
+                      v-if="position.candidates?.find((c: any) => c.id === votes[position.id]).profile_picture_url || position.candidates?.find((c: any) => c.id === votes[position.id]).profile_picture"
+                      :src="position.candidates?.find((c: any) => c.id === votes[position.id]).profile_picture_url || position.candidates?.find((c: any) => c.id === votes[position.id]).profile_picture"
+                      :alt="position.candidates?.find((c: any) => c.id === votes[position.id]).user?.display_name || 'Candidate photo'"
+                      loading="lazy"
+                      class="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border border-gray-200 mx-auto md:mx-0"
+                    />
+                    <div v-else class="w-40 h-40 md:w-48 md:h-48 bg-green-50 rounded-full flex items-center justify-center border border-gray-200 mx-auto md:mx-0">
+                      <User class="h-16 w-16 md:h-20 md:w-20 text-green-600" />
+                    </div>
                   </div>
                   <div>
                     <p class="font-medium">
@@ -361,9 +379,6 @@ onMounted(() => {
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium text-gray-700">
               {{ currentPosition?.title }}
-            </span>
-            <span class="text-sm text-gray-500">
-              {{ currentPositionIndex + 1 }} of {{ totalPositions }}
             </span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2">
