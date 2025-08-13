@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -188,48 +189,49 @@ class ExhibitionVerifyPromoteView(APIView):
     def post(self, request, entry_id):
         if not (request.user.is_ec_member or request.user.is_staff):
             return Response({'detail': 'Forbidden'}, status=403)
-        try:
-            entry = ExhibitionEntry.objects.select_for_update().get(id=entry_id)
-        except ExhibitionEntry.DoesNotExist:
-            return Response({'detail': 'Entry not found'}, status=404)
+        with transaction.atomic():
+            try:
+                entry = ExhibitionEntry.objects.select_for_update().get(id=entry_id)
+            except ExhibitionEntry.DoesNotExist:
+                return Response({'detail': 'Entry not found'}, status=404)
 
-        if entry.user:
-            return Response({'status': 'already_promoted', 'user_id': str(entry.user.id)})
+            if entry.user:
+                return Response({'status': 'already_promoted', 'user_id': str(entry.user.id)})
 
-        if not entry.is_verified:
-            entry.is_verified = True
-            entry.verified_by = request.user
-            entry.verified_at = timezone.now()
+            if not entry.is_verified:
+                entry.is_verified = True
+                entry.verified_by = request.user
+                entry.verified_at = timezone.now()
 
-        # Global uniqueness checks
-        if User.objects.filter(phone_number=entry.phone_number).exists():
+            # Global uniqueness checks
+            if User.objects.filter(phone_number=entry.phone_number).exists():
+                entry.save()
+                return Response({'status': 'verified_only', 'reason': 'phone_in_use'})
+
+            sid = entry.student_id or f"EXH{User.objects.count()+1:05d}"
+            if User.objects.filter(student_id=sid).exists():
+                suffix = User.objects.count() + 1
+                while User.objects.filter(student_id=f"{sid}-{suffix}").exists():
+                    suffix += 1
+                sid = f"{sid}-{suffix}"
+
+            raw_password = _generate_password()
+            user = User(
+                username=sid,
+                student_id=sid,
+                first_name=entry.first_name,
+                last_name=entry.last_name,
+                phone_number=entry.phone_number,
+                program=entry.program,
+                year_of_study=entry.year_of_study,
+                hall=entry.hall or ''
+            )
+            user.set_password(raw_password)
+            user.can_vote = True
+            user.changed_password = False
+            user.save()
+            entry.user = user
             entry.save()
-            return Response({'status': 'verified_only', 'reason': 'phone_in_use'})
-
-        sid = entry.student_id or f"EXH{User.objects.count()+1:05d}"
-        if User.objects.filter(student_id=sid).exists():
-            suffix = User.objects.count() + 1
-            while User.objects.filter(student_id=f"{sid}-{suffix}").exists():
-                suffix += 1
-            sid = f"{sid}-{suffix}"
-
-        raw_password = _generate_password()
-        user = User(
-            username=sid,
-            student_id=sid,
-            first_name=entry.first_name,
-            last_name=entry.last_name,
-            phone_number=entry.phone_number,
-            program=entry.program,
-            year_of_study=entry.year_of_study,
-            hall=entry.hall or ''
-        )
-        user.set_password(raw_password)
-        user.can_vote = True
-        user.changed_password = False
-        user.save()
-        entry.user = user
-        entry.save()
 
         sms_sent = False
         if user.phone_number:
