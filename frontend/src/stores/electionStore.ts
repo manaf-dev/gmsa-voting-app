@@ -162,21 +162,31 @@ export const useElectionStore = defineStore('election', () => {
   }
 
   
-  async function createCandidate(positionId: string, candidateDetails: object) {
+  async function createCandidate(positionId: string, candidateDetails: Record<string, any>) {
     loading.value = true
     try {
+      // const formData = new FormData()
+  
+      // Append all candidateDetails fields to FormData
+      // for (const key in candidateDetails) {
+      //   formData.append(key, candidateDetails[key])
+      // }
+  
       const response = await apiInstance.post(
         `/elections/positions/${positionId}/candidates/`,
         candidateDetails,
-        
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       )
-
-      
+  
       const electionId = specificElection.value?.id
       if (electionId) {
         await retrievePosition(electionId)
       }
-
+  
       return response.data
     } catch (err: any) {
       error.value = 'Failed to create candidate'
@@ -185,6 +195,9 @@ export const useElectionStore = defineStore('election', () => {
       loading.value = false
     }
   }
+  
+  
+  
 
   async function fetchCandidates(positionId: string) {
     loading.value = true
