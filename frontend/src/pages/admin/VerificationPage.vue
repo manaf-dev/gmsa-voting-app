@@ -4,41 +4,87 @@ import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import AddMemberModal from '@/modules/AddMemberModal.vue'
-import { ArrowLeft, ChevronsLeft, ChevronsRight, Plus } from 'lucide-vue-next'
+import { ArrowLeft, ChevronsLeft, ChevronsRight, CheckCheck, RotateCw } from 'lucide-vue-next'
+import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
+
+interface ExhibitionEntry {
+  id: string
+  student_id: string
+  first_name: string
+  last_name: string
+  phone_number: string
+  program: string
+  year_of_study: string
+  is_verified: boolean
+  verified_at: string | null
+  user_id: string | null
+  source: string
+  created_at: string
+}
 
 const router = useRouter()
 const showAddMemberModal = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
+const entries = ref<ExhibitionEntry[]>([])
+const verifyingUsers = ref<Set<string>>(new Set())
 
 // Pinia store
 const electionStore = useElectionStore()
+const toast = useToast()
+
+// Handle user verification
+const verifyEntry = async (entryId: string) => {
+  if (verifyingUsers.value.has(entryId)) return
+
+  verifyingUsers.value.add(entryId)
+  try {
+    await electionStore.verifyExhibition(entryId)
+    toast.success('Member verified successfully')
+    // Refresh the entries list
+    fetchEntries()
+  } catch (error) {
+    toast.error('Failed to verify member')
+  } finally {
+    verifyingUsers.value.delete(entryId)
+  }
+}
+
+// Fetch exhibition entries
+const fetchEntries = async () => {
+  try {
+    const response = await electionStore.fetchExhibition()
+    entries.value = response.entries
+  } catch (error) {
+    toast.error('Failed to fetch members')
+  }
+}
 
 // Computed bindings
-const filteredUsers = computed(() => {
-  if (!searchQuery.value) return electionStore.availableUsers
-  return electionStore.availableUsers.filter((user) =>
-    `${user.first_name} ${user.last_name} ${user.student_id}`
+const filteredEntries = computed<ExhibitionEntry[]>(() => {
+  if (!searchQuery.value) return entries.value
+  return entries.value.filter((entry) =>
+    `${entry.first_name} ${entry.last_name} ${entry.student_id}`
       .toLowerCase()
       .includes(searchQuery.value.toLowerCase()),
   )
 })
 
 // Pagination
-const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage))
-const paginatedUsers = computed(() => {
+const totalPages = computed(() => Math.ceil(filteredEntries.value.length / itemsPerPage))
+const paginatedEntries = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
-  return filteredUsers.value.slice(start, start + itemsPerPage)
+  return filteredEntries.value.slice(start, start + itemsPerPage)
 })
 
-const totalMembers = computed(() => filteredUsers.value.length)
+const totalMembers = computed(() => filteredEntries.value.length)
 
-// Fetch users on mount
+// Fetch entries on mount
 onMounted(() => {
-  electionStore.fetchExhibition()
+  fetchEntries()
 })
 
 // Search handler
@@ -77,15 +123,6 @@ const lastPage = () => {
         </BaseBtn>
         <h1 class="text-xl font-semibold text-gray-700 truncate">Members</h1>
       </template>
-      <template #right>
-        <BaseBtn
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
-          @click="showAddMemberModal = true"
-        >
-          <Plus class="h-5 w-5 mr-2" />
-          Member
-        </BaseBtn>
-      </template>
     </NavBar>
 
     <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24">
@@ -110,48 +147,50 @@ const lastPage = () => {
             <thead class="bg-gray-50">
               <tr class="uppercase text-xs font-medium text-gray-500">
                 <th class="px-4 md:px-6 py-3 text-left">Member</th>
-                <th class="px-6 py-3 text-left whitespace-nowrap">Student ID</th>
-                <th class="px-6 py-3 text-left">Program</th>
+                <th class="px-6 py-3 text-left">Phone</th>
                 <th class="px-6 py-3 text-left">Actions</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr
-                v-for="user in paginatedUsers"
-                :key="user.id"
-                class="hover:bg-gray-50 text-sm text-gray-900 cursor-pointer"
+                v-for="entry in paginatedEntries"
+                :key="entry.id"
+                class="hover:bg-gray-50 text-sm text-gray-900"
+                :class="{ 'bg-green-50': entry.is_verified }"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
-                    <div class="h-10 w-10 flex-shrink-0">
-                      <div
-                        class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center"
-                      >
-                        <span class="text-green-600 font-medium text-sm">
-                          {{ user.first_name?.[0] }}{{ user.last_name?.[0] }}
-                        </span>
-                      </div>
-                    </div>
                     <div class="ml-4">
-                      <div class="font-medium">{{ user.first_name }} {{ user.last_name }}</div>
-                      <div class="text-gray-500">{{ user.email }}</div>
+                      <div class="font-medium">{{ entry.first_name }} {{ entry.last_name }}</div>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ user.student_id }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ user.program || 'N/A' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ entry.phone_number || 'N/A' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap font-medium">
                   <div class="flex space-x-3">
-                    <button
-                      class="text-green-600 hover:text-green-900 transition-colors duration-200"
-                      @click.stop="goToMemberDetails(user.id)"
+                    <BaseBtn
+                      v-if="!entry.is_verified"
+                      @click="verifyEntry(entry.id)"
+                      class="inline-flex items-center gap-1.5 text-white bg-green-500 px-3 py-1 rounded-md hover:bg-green-600 transition-colors"
+                      :disabled="verifyingUsers.has(entry.id)"
                     >
-                      View
-                    </button>
+                      <template v-if="verifyingUsers.has(entry.id)">
+                        <RotateCw class="h-3.5 w-3.5 animate-spin" />
+                        Verifying...
+                      </template>
+                      <template v-else>
+                        <CheckCheck class="h-3.5 w-3.5" />
+                        Verify
+                      </template>
+                    </BaseBtn>
+                    <span v-else class="text-green-600 flex items-center gap-1.5">
+                      <CheckCheck class="h-3.5 w-3.5" />
+                      Verified
+                    </span>
                   </div>
                 </td>
               </tr>
-              <tr v-if="paginatedUsers.length === 0">
+              <tr v-if="paginatedEntries.length === 0">
                 <td colspan="5" class="px-6 py-4 text-center text-gray-500">No members found.</td>
               </tr>
             </tbody>
@@ -160,18 +199,23 @@ const lastPage = () => {
 
         <!-- Pagination -->
         <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center justify-between">
             <BaseBtn
-              @click="firstPage"
+              @click="prevPage"
               :disabled="currentPage === 1"
-              class="px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              class="px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 rounded-md"
+              title="Previous page"
             >
               <ChevronsLeft class="h-5 w-5" />
             </BaseBtn>
+            <span class="px-4 py-2 text-sm text-gray-700">
+              {{ currentPage }} of {{ totalPages }}
+            </span>
             <BaseBtn
-              @click="lastPage"
+              @click="nextPage"
               :disabled="currentPage === totalPages"
-              class="px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              class="px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 rounded-md"
+              title="Next page"
             >
               <ChevronsRight class="h-5 w-5" />
             </BaseBtn>

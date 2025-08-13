@@ -15,6 +15,27 @@ export const useElectionStore = defineStore('election', () => {
   const electionPositions = ref<any[]>([]) 
   const availableUsers = ref<any[]>([]) 
 
+  // Verify user
+  async function verifyUser(userId: string) {
+    loading.value = true
+    try {
+      const response = await apiInstance.post(`/accounts/users/${userId}/verify/`)
+      
+      // Update user in the available users list
+      const userIndex = availableUsers.value.findIndex(user => user.id === userId)
+      if (userIndex !== -1) {
+        availableUsers.value[userIndex] = { ...availableUsers.value[userIndex], is_verified: true }
+      }
+      
+      return response.data
+    } catch (err: any) {
+      error.value = 'Failed to verify user'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Create Election
   async function createElection(ElectionDetails: object) {
     loading.value = true
@@ -162,31 +183,21 @@ export const useElectionStore = defineStore('election', () => {
   }
 
   
-  async function createCandidate(positionId: string, candidateDetails: Record<string, any>) {
+  async function createCandidate(positionId: string, candidateDetails: object) {
     loading.value = true
     try {
-      // const formData = new FormData()
-  
-      // Append all candidateDetails fields to FormData
-      // for (const key in candidateDetails) {
-      //   formData.append(key, candidateDetails[key])
-      // }
-  
       const response = await apiInstance.post(
         `/elections/positions/${positionId}/candidates/`,
         candidateDetails,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        
       )
-  
+
+      
       const electionId = specificElection.value?.id
       if (electionId) {
         await retrievePosition(electionId)
       }
-  
+
       return response.data
     } catch (err: any) {
       error.value = 'Failed to create candidate'
@@ -195,9 +206,6 @@ export const useElectionStore = defineStore('election', () => {
       loading.value = false
     }
   }
-  
-  
-  
 
   async function fetchCandidates(positionId: string) {
     loading.value = true
@@ -347,6 +355,36 @@ export const useElectionStore = defineStore('election', () => {
     }
   }
 
+  // Fetch exhibition entries
+async function fetchExhibition() {
+  loading.value = true
+  try {
+    const res = await apiInstance.get('/accounts/exhibition/entries/')
+    return res.data
+  } catch (err: any) {
+    console.error('fetchExhibition error:', err?.response?.data || err)
+    error.value = 'Failed to fetch exhibition entries'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+async function verifyExhibition(entryId: string | number, action: 'verify' | 'promote' | 'reject' = 'verify') {
+  loading.value = true
+  try {
+    const res = await apiInstance.post(`/accounts/exhibition/verify-promote/${entryId}/`, { action })
+    return res.data
+  } catch (err: any) {
+    console.error('verifyExhibition error:', err?.response?.data || err)
+    error.value = 'Failed to verify/promote exhibition entry'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+
 
   return {
     loading,
@@ -355,7 +393,10 @@ export const useElectionStore = defineStore('election', () => {
     specificElection,
     electionPositions,
     availableUsers,
+    verifyUser,
     createElection,
+    fetchExhibition,
+    verifyExhibition,
   updateElection,
   deleteElection,
     createPosition,       

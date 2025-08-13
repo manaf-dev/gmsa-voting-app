@@ -132,12 +132,13 @@ const showCreateElectionModal = ref(false) // Track modal visibility
             View All Members
           </router-link>
 
-          <BaseBtn
+          <router-link
+            to="/verification"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            <ArrowUpFromLine class="w-4 h-4 text-amber-600" />
-            Export Member Data
-          </BaseBtn>
+            <Users class="w-4 h-4 text-blue-600" />
+            Verify Members
+          </router-link>
         </div>
       </div>
     </div>
