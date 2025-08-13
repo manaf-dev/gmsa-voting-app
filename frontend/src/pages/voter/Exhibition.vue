@@ -157,15 +157,15 @@
                 <input v-model="form.phone" disabled class="form-input form-input-lg bg-gray-50" />
               </div>
               <div>
-                <label class="form-label">Student ID (optional)</label>
+                <label class="form-label">Student ID</label>
                 <input v-model="form.student_id" class="form-input form-input-lg" />
               </div>
               <div>
-                <label class="form-label">Program (optional)</label>
+                <label class="form-label">Program</label>
                 <input v-model="form.program" class="form-input form-input-lg" />
               </div>
               <div>
-                <label class="form-label">Year of Study (optional)</label>
+                <label class="form-label">Year of Study</label>
                 <select v-model="form.year_of_study" class="form-input form-input-lg">
                   <option value="">Select Year</option>
                   <option value="100">Level 100</option>
