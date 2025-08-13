@@ -270,46 +270,46 @@ class ExhibitionEntriesListView(APIView):
         if not (request.user.is_ec_member or request.user.is_staff):
             return Response({'detail': 'Forbidden'}, status=403)
 
-        status_filter = request.query_params.get('status', 'pending').lower()
-        search = request.query_params.get('search', '').strip()
-        try:
-            limit = int(request.query_params.get('limit', 200))
-        except ValueError:
-            limit = 200
-        limit = max(1, min(limit, 1000))
+        # status_filter = request.query_params.get('status', 'pending').lower()
+        # search = request.query_params.get('search', '').strip()
+        # try:
+        #     limit = int(request.query_params.get('limit', 200))
+        # except ValueError:
+        #     limit = 200
+        # limit = max(1, min(limit, 1000))
 
         qs = ExhibitionEntry.objects.all().order_by('-created_at')
-        if status_filter == 'pending':
-            qs = qs.filter(is_verified=False)
-        elif status_filter == 'verified':
-            qs = qs.filter(is_verified=True)
+        # if status_filter == 'pending':
+        #     qs = qs.filter(is_verified=False)
+        # elif status_filter == 'verified':
+        #     qs = qs.filter(is_verified=True)
         # else 'all' -> no additional filter
 
-        if search:
-            from django.db.models import Q
-            q_obj = (
-                Q(phone_number__icontains=search) |
-                Q(first_name__icontains=search) |
-                Q(last_name__icontains=search) |
-                Q(student_id__icontains=search)
-            )
-            qs = qs.filter(q_obj)
+        # if search:
+        #     from django.db.models import Q
+        #     q_obj = (
+        #         Q(phone_number__icontains=search) |
+        #         Q(first_name__icontains=search) |
+        #         Q(last_name__icontains=search) |
+        #         Q(student_id__icontains=search)
+        #     )
+        #     qs = qs.filter(q_obj)
 
         entries = []
-        for e in qs[:limit]:
+        for e in qs:
             entries.append({
                 'id': str(e.id),
                 'student_id': e.student_id,
                 'first_name': e.first_name,
                 'last_name': e.last_name,
                 'phone_number': e.phone_number,
-                'program': e.program,
-                'year_of_study': e.year_of_study,
+                # 'program': e.program,
+                # 'year_of_study': e.year_of_study,
                 'is_verified': e.is_verified,
-                'verified_at': e.verified_at.isoformat() if e.verified_at else None,
-                'user_id': str(e.user.id) if e.user else None,
-                'source': e.source,
-                'created_at': e.created_at.isoformat(),
+                # 'verified_at': e.verified_at.isoformat() if e.verified_at else None,
+                # 'user_id': str(e.user.id) if e.user else None,
+                # 'source': e.source,
+                # 'created_at': e.created_at.isoformat(),
             })
 
         return Response({'count': len(entries), 'entries': entries})
