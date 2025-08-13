@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
 from rest_framework import serializers
 from accounts.serializers import (
     ChangePasswordSerializer,
@@ -6,6 +6,94 @@ from accounts.serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
     UserUpdateSerializer,
+)
+
+
+exhibition_lookup_schema = extend_schema(
+    summary="Exhibition lookup by phone",
+    description="Check if a phone number already exists in either the exhibition register or active users.",
+    request=inline_serializer(name="ExhibitionLookupRequest", fields={
+        'phone': serializers.CharField()
+    }),
+    responses={200: inline_serializer(name="ExhibitionLookupResponse", fields={
+        'status': serializers.CharField(),
+        'message': serializers.CharField(),
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_register_schema = extend_schema(
+    summary="Register details for exhibition",
+    description="Submit basic voter details to the exhibition (staging) register pending verification.",
+    request=inline_serializer(name="ExhibitionRegisterRequest", fields={
+        'phone': serializers.CharField(),
+        'first_name': serializers.CharField(),
+        'last_name': serializers.CharField(),
+        'student_id': serializers.CharField(required=False, allow_blank=True),
+        'program': serializers.CharField(required=False, allow_blank=True),
+        'year_of_study': serializers.CharField(required=False, allow_blank=True),
+    }),
+    responses={201: inline_serializer(name="ExhibitionRegisterResponse", fields={
+        'status': serializers.CharField(),
+        'message': serializers.CharField(),
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_pending_list_schema = extend_schema(
+    summary="List pending exhibition entries (EC only)",
+    description="Return up to 500 pending (unverified) exhibition entries.",
+    responses={200: inline_serializer(name="ExhibitionPendingListResponse", fields={
+        'pending': serializers.ListField(child=serializers.DictField())
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_verify_schema = extend_schema(
+    summary="Verify exhibition entry (EC only)",
+    description="Mark a single exhibition entry as verified.",
+    responses={200: inline_serializer(name="ExhibitionVerifyResponse", fields={
+        'status': serializers.CharField(),
+        'entry_id': serializers.CharField(),
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_promote_schema = extend_schema(
+    summary="Promote verified entries (EC only)",
+    description="Promote up to 500 verified exhibition entries into real voter accounts and dispatch welcome SMS.",
+    responses={200: inline_serializer(name="ExhibitionPromoteResponse", fields={
+        'promoted': serializers.ListField(child=serializers.DictField()),
+        'count': serializers.IntegerField(),
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_verify_promote_schema = extend_schema(
+    summary="Verify & promote single entry (EC only)",
+    description="One-click endpoint to verify and immediately promote an exhibition entry with credentials SMS.",
+    responses={201: inline_serializer(name="ExhibitionVerifyPromoteResponse", fields={
+        'status': serializers.CharField(),
+        'entry_id': serializers.CharField(),
+        'user': serializers.DictField(),
+        'sms_sent': serializers.BooleanField(),
+    })},
+    tags=["Exhibition"],
+)
+
+exhibition_entries_list_schema = extend_schema(
+    summary="List exhibition entries (EC only)",
+    description="List exhibition entries with optional filters: status (pending|verified|all), search, limit.",
+    parameters=[
+        OpenApiParameter(name='status', description='pending | verified | all', required=False, type=str),
+        OpenApiParameter(name='search', description='Search term for phone, name, student_id', required=False, type=str),
+        OpenApiParameter(name='limit', description='Max records (default 200, max 1000)', required=False, type=int),
+    ],
+    responses={200: inline_serializer(name="ExhibitionEntriesListResponse", fields={
+        'count': serializers.IntegerField(),
+        'entries': serializers.ListField(child=serializers.DictField()),
+    })},
+    tags=["Exhibition"],
 )
 
 
