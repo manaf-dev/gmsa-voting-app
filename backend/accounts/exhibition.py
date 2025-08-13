@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from utils.helpers import _generate_password
+from utils.helpers import _generate_password, _generate_username
 from utils.sms_service import send_welcome_sms
 from .models import User, ExhibitionEntry
 from docs.accounts import (
@@ -215,9 +215,11 @@ class ExhibitionVerifyPromoteView(APIView):
                     suffix += 1
                 sid = f"{sid}-{suffix}"
 
+            username = _generate_username(entry.first_name, entry.last_name, sid)
+
             raw_password = _generate_password()
             user = User(
-                username=sid,
+                username=username,
                 student_id=sid,
                 first_name=entry.first_name,
                 last_name=entry.last_name,

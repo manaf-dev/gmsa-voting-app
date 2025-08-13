@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import AcademicYear
 from utils.sms_service import send_welcome_sms
-from utils.helpers import _generate_password
+from utils.helpers import _generate_password, _generate_username
 
 User = get_user_model()
 
@@ -147,7 +147,7 @@ class Command(BaseCommand):
 
                     # Generate username if not provided
                     if not username:
-                        username = self._generate_username(
+                        username = _generate_username(
                             first_name, last_name, student_id
                         )
 
@@ -278,31 +278,4 @@ class Command(BaseCommand):
                 self.style.SUCCESS("\n✅ Bulk load completed successfully!")
             )
 
-    def _generate_username(
-        self, first_name: str, last_name: str, student_id: str
-    ) -> str:
-        """Generate username from first name, last name, and student ID"""
-        # Clean names
-        first_clean = first_name.capitalize().replace(" ", "")
-        last_clean = last_name.capitalize().replace(" ", "")
-
-        # Try different username patterns
-        patterns = [
-            f"{first_clean}_{last_clean[:2]}",
-            f"{first_clean}_{last_clean[:3]}",
-            f"{first_clean}.{last_clean[:2]}",
-            f"{first_clean}{last_clean[:3]}",
-            f"user{student_id}",
-        ]
-
-        for pattern in patterns:
-            if not User.objects.filter(username=pattern).exists():
-                return pattern
-
-        # If all patterns exist, append a number
-        base_username = patterns[0]
-        counter = 1
-        while User.objects.filter(username=f"{base_username}{counter}").exists():
-            counter += 1
-
-        return f"{base_username}{counter}"
+    
