@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from utils.helpers import _generate_password
 from utils.sms_service import send_welcome_sms
-from .models import User
+from .models import User, ExhibitionEntry
 
 class ExhibitionLookupSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20)
@@ -53,9 +53,9 @@ class ExhibitionLookupView(APIView):
         serializer = ExhibitionLookupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone = serializer.validated_data['phone']
-        exists = User.objects.filter(phone_number=phone).exists()
+        exists = ExhibitionEntry.objects.filter(phone_number=phone).exists() or User.objects.filter(phone_number=phone).exists()
         if exists:
-            return Response({'status': 'found', 'message': 'Your details are on the register.'})
+            return Response({'status': 'found', 'message': 'Your details are on the exhibition register.'})
         return Response({'status': 'not_found', 'message': 'No record found. Please provide details to register.'})
 
 class ExhibitionRegisterView(APIView):
@@ -65,25 +65,18 @@ class ExhibitionRegisterView(APIView):
         serializer = ExhibitionRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone = serializer.validated_data['phone']
-        if User.objects.filter(phone_number=phone).exists():
-            return Response({'status': 'exists', 'message': 'Phone already registered.'}, status=status.HTTP_200_OK)
+        if ExhibitionEntry.objects.filter(phone_number=phone).exists() or User.objects.filter(phone_number=phone).exists():
+            return Response({'status': 'exists', 'message': 'Phone already on register.'}, status=status.HTTP_200_OK)
         data = serializer.validated_data
-        # Provide fallback student id if absent
-        student_id = data.get('student_id') or f"EXH{User.objects.count()+1:05d}"
-        user = User.objects.create(
-            username=student_id,
-            student_id=student_id,
+        ExhibitionEntry.objects.create(
+            phone_number=phone,
             first_name=data['first_name'].title(),
             last_name=data['last_name'].title(),
-            phone_number=phone,
+            student_id=data.get('student_id',''),
             program=data.get('program',''),
             year_of_study=data.get('year_of_study',''),
-            password='temporary'
+            source='self_submitted'
         )
-        # Set unusable password for security until admin bulk load / activation
-        user.set_unusable_password()
-        user.can_vote = False  # pending verification
-        user.save()
         return Response({'status': 'created', 'message': 'Submitted for verification.'}, status=status.HTTP_201_CREATED)
 
 
@@ -95,18 +88,19 @@ class ExhibitionPendingListView(APIView):
     def get(self, request):
         if not (request.user.is_ec_member or request.user.is_staff):
             return Response({'detail': 'Forbidden'}, status=403)
-        pending = User.objects.filter(can_vote=False, is_active=True, password__startswith='!')[:500]
+        pending = ExhibitionEntry.objects.filter(is_verified=False).order_by('-created_at')[:500]
         data = [
             {
-                'id': str(u.id),
-                'student_id': u.student_id,
-                'first_name': u.first_name,
-                'last_name': u.last_name,
-                'phone_number': u.phone_number,
-                'program': u.program,
-                'year_of_study': u.year_of_study,
+                'id': str(e.id),
+                'student_id': e.student_id,
+                'first_name': e.first_name,
+                'last_name': e.last_name,
+                'phone_number': e.phone_number,
+                'program': e.program,
+                'year_of_study': e.year_of_study,
+                'source': e.source,
             }
-            for u in pending
+            for e in pending
         ]
         return Response({'pending': data})
 
@@ -118,21 +112,51 @@ class ExhibitionVerifyView(APIView):
         if not (request.user.is_ec_member or request.user.is_staff):
             return Response({'detail': 'Forbidden'}, status=403)
         try:
-            user = User.objects.get(id=user_id, can_vote=False)
-        except User.DoesNotExist:
-            return Response({'detail': 'User not found or already verified'}, status=404)
+            entry = ExhibitionEntry.objects.get(id=user_id, is_verified=False)
+        except ExhibitionEntry.DoesNotExist:
+            return Response({'detail': 'Entry not found or already verified'}, status=404)
 
-        # Generate password and activate voting rights
-        raw_password = _generate_password()
-        user.set_password(raw_password)
-        user.can_vote = True
-        user.changed_password = False
-        user.save()
+        entry.is_verified = True
+        entry.verified_by = request.user
+        from django.utils import timezone
+        entry.verified_at = timezone.now()
+        entry.save()
+        return Response({'status': 'verified', 'entry_id': str(entry.id)})
 
-        if user.phone_number:
-            try:
-                send_welcome_sms(user, raw_password, async_send=True)
-            except Exception:
-                pass
+class ExhibitionPromoteVerifiedView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        return Response({'status': 'verified', 'student_id': user.student_id})
+    def post(self, request):
+        if not (request.user.is_ec_member or request.user.is_staff):
+            return Response({'detail': 'Forbidden'}, status=403)
+        promoted = []
+        for entry in ExhibitionEntry.objects.filter(is_verified=True, user__isnull=True)[:500]:
+            # Skip if phone already used
+            if User.objects.filter(phone_number=entry.phone_number).exists():
+                continue
+            # Generate student id if missing
+            sid = entry.student_id or f"EXH{User.objects.count()+1:05d}"
+            user = User(
+                username=sid,
+                student_id=sid,
+                first_name=entry.first_name,
+                last_name=entry.last_name,
+                phone_number=entry.phone_number,
+                program=entry.program,
+                year_of_study=entry.year_of_study,
+                hall=entry.hall or ''
+            )
+            raw_password = _generate_password()
+            user.set_password(raw_password)
+            user.can_vote = True
+            user.changed_password = False
+            user.save()
+            entry.user = user
+            entry.save(update_fields=['user'])
+            if user.phone_number:
+                try:
+                    send_welcome_sms(user, raw_password, async_send=True)
+                except Exception:
+                    pass
+            promoted.append({'student_id': user.student_id, 'phone': user.phone_number})
+        return Response({'promoted': promoted, 'count': len(promoted)})

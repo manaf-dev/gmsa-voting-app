@@ -109,6 +109,58 @@ class User(AbstractUser):
     #     )
 
 
+class ExhibitionEntry(models.Model):
+    """Temporary voter register entries collected during exhibition.
+
+    These are verified first and only promoted to real User accounts when
+    the register is finally closed and synced (so credentials are only issued once).
+    """
+
+    SOURCE_CHOICES = (
+        ("imported", "Imported"),
+        ("self_submitted", "Self Submitted"),
+        ("admin_added", "Admin Added"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Basic identity fields mirroring User (subset)
+    student_id = models.CharField(max_length=20, blank=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    phone_number = models.CharField(max_length=15)
+    program = models.CharField(max_length=100, blank=True)
+    year_of_study = models.CharField(max_length=20, blank=True)
+    hall = models.CharField(max_length=50, null=True, blank=True)
+
+    # Verification workflow
+    is_verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verified_by = models.ForeignKey(
+        'User', null=True, blank=True, on_delete=models.SET_NULL, related_name='verified_exhibition_entries'
+    )
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='self_submitted')
+
+    # Link to created user after sync
+    user = models.OneToOneField('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='exhibition_entry')
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['phone_number']),
+            models.Index(fields=['is_verified']),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.phone_number} - {self.first_name} {self.last_name} ({'verified' if self.is_verified else 'pending'})"
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+
 # class UserProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 #     profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)

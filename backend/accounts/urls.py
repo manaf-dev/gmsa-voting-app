@@ -10,6 +10,7 @@ from .exhibition import (
     ExhibitionRegisterView,
     ExhibitionPendingListView,
     ExhibitionVerifyView,
+    ExhibitionPromoteVerifiedView,
 )
 
 urlpatterns = [
@@ -63,4 +64,5 @@ urlpatterns = [
     path("exhibition/register/", ExhibitionRegisterView.as_view(), name="exhibition-register"),
     path("exhibition/pending/", ExhibitionPendingListView.as_view(), name="exhibition-pending"),
     path("exhibition/verify/<uuid:user_id>/", ExhibitionVerifyView.as_view(), name="exhibition-verify"),
+    path("exhibition/promote/", ExhibitionPromoteVerifiedView.as_view(), name="exhibition-promote"),
 ]
