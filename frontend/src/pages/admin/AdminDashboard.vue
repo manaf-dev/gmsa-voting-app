@@ -4,12 +4,9 @@ import {
   Backpack,
   Vote,
   Users,
-  UserCheck,
   SquareArrowOutUpRight,
   BadgePlus,
-  FileBadge2,
-  BookMarked,
-  ArrowUpFromLine,
+  CheckCheck,
 } from 'lucide-vue-next'
 
 import NavBar from '@/components/NavBar.vue'
@@ -51,7 +48,7 @@ const showCreateElectionModal = ref(false) // Track modal visibility
     </div>
 
     <!-- Quick Stats -->
-    <div
+    <!-- <div
       class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 lg:px-8"
     >
       <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
@@ -84,7 +81,7 @@ const showCreateElectionModal = ref(false) // Track modal visibility
         </div>
       </div>
 
-      <!-- <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
+      <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
         <div class="bg-emerald-100 w-8 h-8 rounded-lg flex items-center justify-center">
           <UserCheck class="w-6 h-6 text-emerald-600" />
         </div>
@@ -92,8 +89,8 @@ const showCreateElectionModal = ref(false) // Track modal visibility
           <p class="text-sm font-medium text-gray-600">Paid Members</p>
           <p class="text-2xl font-semibold text-gray-700">50</p>
         </div>
-      </div> -->
-    </div>
+      </div>
+    </div> -->
 
     <!-- Quick Actions -->
     <div
@@ -136,7 +133,7 @@ const showCreateElectionModal = ref(false) // Track modal visibility
             to="/verification"
             class="flex items-center gap-1.5 w-max py-2 px-3 rounded-full hover:bg-gray-100 hover:text-gray-900 hover:gap-2 transition-all duration-200 ease-in-out"
           >
-            <Users class="w-4 h-4 text-blue-600" />
+            <CheckCheck class="w-4 h-4 text-purple-600" />
             Verify Members
           </router-link>
         </div>

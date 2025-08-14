@@ -38,7 +38,7 @@ const totalMembers = computed(() => filteredUsers.value.length)
 
 // Fetch users on mount
 onMounted(() => {
-  electionStore.fetchExhibition()
+  electionStore.fetchUsers()
 })
 
 // Search handler
@@ -49,6 +49,10 @@ const searchUsers = () => {
 // Navigation
 const goBack = () => {
   router.back()
+}
+
+const goToMemberDetails = (id: string | number) => {
+  router.push({ name: 'MemberDetails', params: { id } })
 }
 
 const prevPage = () => {
@@ -120,6 +124,7 @@ const lastPage = () => {
                 v-for="user in paginatedUsers"
                 :key="user.id"
                 class="hover:bg-gray-50 text-sm text-gray-900 cursor-pointer"
+                @click="goToMemberDetails(user.id)"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
