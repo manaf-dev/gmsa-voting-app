@@ -13,6 +13,7 @@ const showAddMemberModal = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
+const loading = ref(false) // NEW: loading state
 
 // Pinia store
 const electionStore = useElectionStore()
@@ -37,8 +38,17 @@ const paginatedUsers = computed(() => {
 const totalMembers = computed(() => filteredUsers.value.length)
 
 // Fetch users on mount
+const fetchUsers = async () => {
+  loading.value = true
+  try {
+    await electionStore.fetchUsers()
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
-  electionStore.fetchUsers()
+  fetchUsers()
 })
 
 // Search handler
@@ -110,7 +120,15 @@ const lastPage = () => {
         </div>
 
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+          <!-- Loading spinner -->
+          <div v-if="loading" class="p-6 text-center">
+            <div
+              class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"
+            ></div>
+          </div>
+
+          <!-- Table -->
+          <table v-else class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr class="uppercase text-xs font-medium text-gray-500">
                 <th class="px-4 md:px-6 py-3 text-left">Member</th>

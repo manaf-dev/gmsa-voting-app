@@ -31,6 +31,8 @@ const currentPage = ref(1)
 const itemsPerPage = 10
 const entries = ref<ExhibitionEntry[]>([])
 const verifyingUsers = ref<Set<string>>(new Set())
+const Loading = ref(false)
+const showVerifiedOnly = ref(false) // NEW toggle
 
 // Pinia store
 const electionStore = useElectionStore()
@@ -41,36 +43,47 @@ const verifyEntry = async (entryId: string) => {
   if (verifyingUsers.value.has(entryId)) return
 
   verifyingUsers.value.add(entryId)
+  Loading.value = true
   try {
     await electionStore.verifyExhibition(entryId)
     toast.success('Member verified successfully')
-    // Refresh the entries list
-    fetchEntries()
+
+    await fetchEntries()
   } catch (error) {
     toast.error('Failed to verify member')
   } finally {
     verifyingUsers.value.delete(entryId)
+    Loading.value = false
   }
 }
 
 // Fetch exhibition entries
 const fetchEntries = async () => {
+  Loading.value = true
   try {
     const response = await electionStore.fetchExhibition()
     entries.value = response.entries
   } catch (error) {
     toast.error('Failed to fetch members')
+  } finally {
+    Loading.value = false
   }
 }
 
 // Computed bindings
 const filteredEntries = computed<ExhibitionEntry[]>(() => {
-  if (!searchQuery.value) return entries.value
-  return entries.value.filter((entry) =>
-    `${entry.first_name} ${entry.last_name} ${entry.phone_number}`
-      .toLowerCase()
-      .includes(searchQuery.value.toLowerCase()),
-  )
+  let result = entries.value
+  if (showVerifiedOnly.value) {
+    result = result.filter((entry) => entry.is_verified)
+  }
+  if (searchQuery.value) {
+    result = result.filter((entry) =>
+      `${entry.first_name} ${entry.last_name} ${entry.phone_number}`
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase()),
+    )
+  }
+  return result
 })
 
 // Pagination
@@ -81,6 +94,7 @@ const paginatedEntries = computed(() => {
 })
 
 const totalMembers = computed(() => filteredEntries.value.length)
+const verifiedMembers = computed(() => entries.value.filter((entry) => entry.is_verified).length)
 
 // Fetch entries on mount
 onMounted(() => {
@@ -93,10 +107,7 @@ const searchUsers = () => {
 }
 
 // Navigation
-const goBack = () => {
-  router.back()
-}
-
+const goBack = () => router.back()
 const prevPage = () => {
   if (currentPage.value > 1) currentPage.value--
 }
@@ -146,13 +157,21 @@ const lastPage = () => {
               @input="searchUsers"
             />
           </div>
-          <div class="text-sm mt-4 text-gray-600 flex justify-start md:gap-4 items-center">
+          <div class="mt-4 flex items-center gap-4 text-sm text-gray-600">
             <p>Total members: {{ totalMembers }}</p>
-            <p>Verified members: {{}}</p>
+            <p>Verified members: {{ verifiedMembers }}</p>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="showVerifiedOnly" />
+              Show verified only
+            </label>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div v-if="Loading" class="p-6 text-center">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+        </div>
+
+        <div v-else class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr class="uppercase text-xs font-medium text-gray-500">
