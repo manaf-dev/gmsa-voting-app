@@ -33,12 +33,13 @@ const UserDetails = reactive({
 
 const SubmitUserDetails = async () => {
   try {
-    await authStore.registerNewUser(UserDetails)
+    const response = await authStore.registerNewUser(UserDetails)
     toast.success('Registration successful!')
     emit('member-registered')
     emit('close') // Close modal on success
   } catch (error) {
-    toast.error('Invalid credentials or registration failed')
+    console.log(error)
+    toast.error((error as any).response?.data?.message || 'Invalid credentials or registration failed')
   }
 }
 </script>
