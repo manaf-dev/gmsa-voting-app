@@ -157,7 +157,7 @@ class Candidate(models.Model):
         total_votes = self.position.total_votes
         if total_votes == 0:
             return 0
-        return (self.vote_count / total_votes) * 100
+        return round((self.vote_count / total_votes) * 100, 2)
 
 
 class Vote(models.Model):

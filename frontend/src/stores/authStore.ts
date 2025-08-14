@@ -64,7 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function login(UserDetails: any) {
+  async function login(UserDetails: any, redirectTo?: string) {
     loading.value = true
     error.value = null
 
@@ -107,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
         // ignore
       }
 
-      router.push('/dashboard')
+  router.replace(redirectTo || '/dashboard')
       return response.data
     } catch (err: any) {
       throw err 
