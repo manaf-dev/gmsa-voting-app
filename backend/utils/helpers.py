@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-def _generate_password(length: int = 10) -> str:
+def _generate_password(length: int = 8) -> str:
     """Generate a secure random password"""
     # Use letters and digits
     characters = string.ascii_letters + string.digits
