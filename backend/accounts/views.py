@@ -389,6 +389,17 @@ class UserViewset(viewsets.ViewSet):
         
         user.is_active = False
         user.save()
+
+        # Also unverify related exhibition entry if it exists
+        try:
+            entry = getattr(user, 'exhibition_entry', None)
+            if entry and entry.is_verified:
+                entry.is_verified = False
+                entry.verified_at = None
+                entry.verified_by = None
+                entry.save(update_fields=["is_verified", "verified_at", "verified_by"])
+        except Exception:
+            pass
         return Response({"message": "User is removed"})
 
 

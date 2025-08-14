@@ -8,17 +8,19 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: Home
+      component: Home,
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('../pages/auth/Login.vue')
+      component: () => import('../pages/auth/Login.vue'),
+      meta: { guest: true }
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../pages/auth/Register.vue')
+      component: () => import('../pages/auth/Register.vue'),
+      meta: { guest: true }
     },
     {
       path: '/payment/:type?',
@@ -149,8 +151,12 @@ router.beforeEach((to, from, next) => {
     next('/dashboard')
     return
   }
-  
-  
+
+  if (to.meta.guest && authStore.isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+
   next()
 })
 

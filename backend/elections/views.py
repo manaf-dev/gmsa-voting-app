@@ -302,7 +302,7 @@ def election_results(request, election_id):
         )
 
     # Compute eligibility and turnout
-    total_eligible_voters = User.objects.filter(is_active=True).count()
+    total_eligible_voters = User.objects.filter(is_active=True, is_staff=False).count()
     total_votes_cast = election.total_votes
     total_unique_voters = election.total_voters
     voter_turnout = (total_unique_voters / total_eligible_voters * 100) if total_eligible_voters else 0
@@ -360,11 +360,11 @@ def publish_election_results(request, election_id):
     election.results_published_at = timezone.now()
     election.save(update_fields=["results_published", "results_published_at"])
 
-    # Notify voters via SMS (best effort)
+    # Notify ONLY voters via SMS (best effort)
     try:
-        from accounts.models import User
         from utils.tasks import send_bulk_results_published_sms_task
-        voter_ids = list(User.objects.filter(is_active=True).values_list("id", flat=True))
+        from .models import Vote
+        voter_ids = Vote.get_unique_voter_ids(election)
         if voter_ids:
             send_bulk_results_published_sms_task.delay(str(election.id), voter_ids)
     except Exception:
@@ -609,17 +609,22 @@ class CandidateDetailView(generics.RetrieveUpdateDestroyAPIView):
 def admin_stats(request):
     if not (request.user.is_ec_member or request.user.is_staff):
         raise PermissionDenied("Only EC members can access admin stats")
+    # Requested stats: total elections, total members (from exhibition entries), eligible voters
+    from accounts.models import ExhibitionEntry
 
-    # Intentionally minimal; add more aggregates as needed
+    total_elections = Election.objects.count()
+    # Total members = all exhibition entries collected (verified or not)
+    total_members = ExhibitionEntry.objects.count()
+    # Eligible voters = verified exhibition entries (can refine later with dues logic)
+    eligible_voters = ExhibitionEntry.objects.filter(is_verified=True).count()
 
-    stats = {
-        "total_elections": Election.objects.count(),
-        "active_elections": Election.objects.filter(status="active").count(),
-        "upcoming_elections": Election.objects.filter(status="upcoming").count(),
-        "completed_elections": Election.objects.filter(status="completed").count(),
-    }
-
-    return Response(stats)
+    return Response(
+        {
+            "total_elections": total_elections,
+            "total_members": total_members,
+            "eligible_voters": eligible_voters,
+        }
+    )
 
 
 @admin_members_schema

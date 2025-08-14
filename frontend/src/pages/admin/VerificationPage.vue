@@ -78,7 +78,7 @@ const filteredEntries = computed<ExhibitionEntry[]>(() => {
   }
   if (searchQuery.value) {
     result = result.filter((entry) =>
-      `${entry.first_name} ${entry.last_name} ${entry.student_id}`
+      `${entry.first_name} ${entry.last_name} ${entry.phone_number}`
         .toLowerCase()
         .includes(searchQuery.value.toLowerCase()),
     )
@@ -153,7 +153,7 @@ const lastPage = () => {
             <BaseInput
               v-model="searchQuery"
               type="search"
-              placeholder="Search by name or id..."
+              placeholder="Search by name or phone number"
               @input="searchUsers"
             />
           </div>

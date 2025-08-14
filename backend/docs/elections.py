@@ -337,7 +337,7 @@ admin_elections_stats_schema = extend_schema(
     Retrieve comprehensive statistics about elections for the admin dashboard.
     Only EC members and staff can access this endpoint.
     
-    Returns counts of elections by status, voting statistics, and other metrics.
+    Currently returns only the requested high-level stats: total elections, total members, and eligible voters.
     """,
     request=None,
     responses={
@@ -345,14 +345,8 @@ admin_elections_stats_schema = extend_schema(
             name="AdminElectionStatsSerializer",
             fields={
                 "total_elections": serializers.IntegerField(),
-                "active_elections": serializers.IntegerField(),
-                "upcoming_elections": serializers.IntegerField(),
-                "completed_elections": serializers.IntegerField(),
-                "total_votes_cast": serializers.IntegerField(),
-                "total_positions": serializers.IntegerField(),
-                "total_candidates": serializers.IntegerField(),
-                "elections_by_status": serializers.DictField(),
-                "recent_activity": serializers.ListField(),
+                "total_members": serializers.IntegerField(),
+                "eligible_voters": serializers.IntegerField(),
             },
         ),
     },

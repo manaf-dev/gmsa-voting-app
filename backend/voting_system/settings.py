@@ -64,7 +64,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "elections.middleware.SecurityMiddleware",  # Rate limiting and audit logging
+    # "elections.middleware.SecurityMiddleware",  # Rate limiting and audit logging
     "elections.middleware.VotingSessionMiddleware",  # Session tracking
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

@@ -44,7 +44,7 @@ const go = (to: string) => router.push(to)
         </div>
         <nav class="flex items-center gap-2 sm:gap-3">
           <router-link to="/login" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:text-white hover:bg-green-600 transition-colors">Login</router-link>
-          <router-link to="/payment/donation" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors">Donate</router-link>
+          <router-link to="/" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors">Donate</router-link>
         </nav>
       </div>
     </header>
@@ -67,7 +67,7 @@ const go = (to: string) => router.push(to)
           <p class="mt-3 text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
             Together in Faith, Knowledge and Service.
           </p>
-          <div class="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+          <!-- <div class="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
             <button
               v-for="a in primaryActions"
               :key="a.label"
@@ -82,7 +82,7 @@ const go = (to: string) => router.push(to)
                 <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
               </span>
             </button>
-          </div>
+          </div> -->
         </div>
       </section>
 

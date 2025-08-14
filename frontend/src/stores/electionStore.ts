@@ -14,6 +14,7 @@ export const useElectionStore = defineStore('election', () => {
   const specificElection = ref<any | null>(null)
   const electionPositions = ref<any[]>([]) 
   const availableUsers = ref<any[]>([]) 
+  const adminStats = ref<{total_elections:number;active_elections:number;upcoming_elections:number;completed_elections:number}|null>(null)
 
   // Verify user
   async function verifyUser(userId: string) {
@@ -384,6 +385,22 @@ async function verifyExhibition(entryId: string | number, action: 'verify' | 'pr
   }
 }
 
+// Fetch admin (EC) statistics
+async function fetchAdminStats() {
+  loading.value = true
+  try {
+    const res = await apiInstance.get('/elections/admin/stats/')
+    adminStats.value = res.data
+    return res.data
+  } catch (err:any) {
+    console.error('fetchAdminStats error:', err?.response?.data || err)
+    error.value = 'Failed to fetch admin stats'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
 
 
   return {
@@ -393,10 +410,12 @@ async function verifyExhibition(entryId: string | number, action: 'verify' | 'pr
     specificElection,
     electionPositions,
     availableUsers,
+    adminStats,
     verifyUser,
     createElection,
     fetchExhibition,
     verifyExhibition,
+  fetchAdminStats,
   updateElection,
   deleteElection,
     createPosition,       

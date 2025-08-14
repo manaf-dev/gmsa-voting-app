@@ -335,6 +335,29 @@ class Vote(models.Model):
 
         return results
 
+    @classmethod
+    def get_unique_voter_ids(cls, election):
+        """Return a list of unique voter UUID strings for an election by decrypting votes.
+
+        Maintains anonymity during the election; only used post-completion (e.g., for notifications).
+        """
+        from .crypto import VotingCrypto
+
+        crypto = VotingCrypto()
+        voter_ids = set()
+        qs = cls.objects.filter(election_id=election.id).only("encrypted_vote_data")
+        for vote in qs:
+            if not vote.encrypted_vote_data:
+                continue
+            try:
+                vote_data = crypto.decrypt_vote_data(vote.encrypted_vote_data)
+                vid = vote_data.get("voter_id")
+                if vid:
+                    voter_ids.add(vid)
+            except Exception:
+                continue
+        return list(voter_ids)
+
     def decrypt_vote_data(self):
         """
         Decrypt and return vote data (admin only)

@@ -189,12 +189,12 @@ class SMSMessageTemplates:
             user_data: Dict with username, password, student_id, first_name
         """
         return f"""Assalamu Alaikum, You have been registered as a voter in the upcoming GMSA Election.
-Below are you account details:
+Below are your account details:
+
 Username: {user_data['username']}
 Password: {user_data['password']}
 
 Login at: {settings.FRONTEND_URL}/login
-
 Please change your password after first login.
 
 - GMSA Electoral Commission"""
