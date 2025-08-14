@@ -3,13 +3,14 @@ import { ArrowLeft, Plus } from 'lucide-vue-next'
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useElectionStore } from '@/stores/electionStore'
 import CreateElection from '@/modules/ElectionFormModal.vue'
 
 const router = useRouter()
 const electionStore = useElectionStore()
 const elections = ref<any[]>([])
+const loading = computed(() => electionStore.loading)
 const showCreateModal = ref(false) // Track modal visibility
 
 function goBack() {
@@ -26,8 +27,12 @@ function formatDate(date: string) {
 }
 
 async function fetchElections() {
-  const data = await electionStore.retrieveElections()
-  elections.value = data // store returns array of elections
+  try {
+    const data = await electionStore.retrieveElections()
+    elections.value = data // store returns array of elections
+  } catch (e) {
+    // optional: handle error UI later
+  }
 }
 
 onMounted(() => {
@@ -75,8 +80,13 @@ onMounted(() => {
         </BaseBtn>
       </div>
 
+      <!-- Loading Skeletons -->
+      <div v-if="loading" class="mt-10 relative">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+      </div>
+
       <!-- Election Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
         <div
           v-for="election in elections"
           :key="election.id"

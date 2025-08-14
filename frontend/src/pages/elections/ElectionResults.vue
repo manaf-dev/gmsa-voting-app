@@ -13,7 +13,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const data = ref<any>(null)
-const revealResults = computed(() => (authStore.user.is_ec_member === false ? true : false))
+const revealResults = ref(authStore.user.is_ec_member === false ? true : false)
 
 const election = computed(() => data.value?.election || {})
 const positions = computed(() => data.value?.positions || [])
@@ -138,7 +138,7 @@ const printPage = () => {
             </div>
           </div>
           <div
-            v-if="authStore.user.is_admin === true"
+            v-if="authStore.user.is_ec_member === true"
             class="mt-4 flex items-center justify-center gap-2"
           >
             <button
