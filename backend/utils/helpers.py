@@ -9,7 +9,7 @@ User = get_user_model()
 def _generate_password(length: int = 8) -> str:
     """Generate a secure random password"""
     # Use letters and digits
-    characters = string.ascii_letters + string.digits
+    characters = string.ascii_uppercase + string.digits
     return "".join(secrets.choice(characters) for _ in range(length))
 
 
