@@ -24,6 +24,7 @@ const showDeleteConfirm = ref(false)
 const deleteTarget = ref<{ type: 'position' | 'candidate'; id: string } | null>(null)
 
 const election = ref<any>(null)
+const loading = computed(() => electionStore.loading)
 const positions = computed(() => {
   // Use positions from the election response if available, otherwise from electionPositions
   return election.value?.positions || electionStore.electionPositions || []
@@ -54,7 +55,12 @@ const editPosition = (position: any) => {
 }
 
 const fetchElectionAndPositions = async () => {
-  election.value = await electionStore.fetchElectionDetails(electionId)
+  election.value = null
+  try {
+    election.value = await electionStore.fetchElectionDetails(electionId)
+  } catch (e) {
+    // swallow; error state could be added later
+  }
 }
 
 const goToVote = () => {
@@ -120,7 +126,11 @@ const performDeleteAction = async () => {
       </template>
     </NavBar>
 
-    <div v-if="election" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-14 sm:mt-24">
+    <div v-if="loading" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-14 sm:mt-24 relative">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+    </div>
+
+    <div v-else-if="election" class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-14 sm:mt-24">
       <!-- Header -->
       <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-4 justify-between">
         <h1 class="text-3xl font-bold text-gray-900">{{ election?.title }}</h1>
@@ -187,7 +197,7 @@ const performDeleteAction = async () => {
         </div>
       </div>
 
-      <div
+  <div
         class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shadow-lg rounded-xl"
         v-if="positions.length"
       >
@@ -236,7 +246,8 @@ const performDeleteAction = async () => {
           </div> -->
         </div>
       </div>
-    </div>
+  </div>
+  <div v-else class="text-center text-gray-500 mt-20">Election not found.</div>
 
     <PositionFormModal
       :v-if="showPositionModal"
