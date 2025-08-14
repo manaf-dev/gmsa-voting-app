@@ -62,20 +62,20 @@ onMounted(async () => {
       <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-6">
         <div class="text-center">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ currentPosition?.title }}</h1>
-        </div>
-        
-        <!-- Stats -->
-        <div class="grid grid-cols-2 gap-4 mt-6 text-center">
           <p class="text-gray-600 mt-2 text-base sm:text-lg">
             {{ currentPosition?.description || 'No description provided' }}
           </p>
+        </div>
+        
+        <!-- Stats -->
+        <!-- <div class="grid grid-cols-2 gap-4 mt-6 text-center">
           <div>
             <span class="text-xs sm:text-sm text-gray-500">Candidates:</span>
             <p class="font-semibold text-gray-900 text-sm">
               {{ currentPosition?.candidates?.length || 0 }}
             </p>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Candidates List -->

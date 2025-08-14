@@ -83,7 +83,7 @@ class ExhibitionRegisterView(APIView):
         phone = serializer.validated_data['phone']
         if (ExhibitionEntry.objects.filter(phone_number=phone).exists() or
                 User.objects.filter(phone_number=phone).exists()):
-            return Response({'status': 'exists', 'message': 'Phone already on register.'}, status=status.HTTP_200_OK)
+            return Response({'status': 'exists', 'message': 'Phone already on register.'}, status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
         ExhibitionEntry.objects.create(
             phone_number=phone,

@@ -12,9 +12,23 @@ import {
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import CreateElection from '@/modules/ElectionFormModal.vue'
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useElectionStore } from '@/stores/electionStore'
+
+const electionStore = useElectionStore()
+const loading = computed(() => electionStore.loading)
+interface AdminStats {
+  total_elections?: number
+  total_members?: number
+  eligible_voters?: number
+}
+const stats = computed<AdminStats>(() => (electionStore.adminStats as AdminStats) || {})
 
 const showCreateElectionModal = ref(false) // Track modal visibility
+
+onMounted(() => {
+  electionStore.fetchAdminStats()
+})
 </script>
 
 <template>
@@ -48,49 +62,45 @@ const showCreateElectionModal = ref(false) // Track modal visibility
     </div>
 
     <!-- Quick Stats -->
-    <!-- <div
+    <div
       class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 lg:px-8"
     >
+      <!-- Total Elections -->
       <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
-        <div class="bg-blue-100 w-8 h-8 rounded-lg flex items-center justify-center">
-          <Backpack class="w-6 h-6" />
+        <div class="bg-blue-100 w-10 h-10 rounded-lg flex items-center justify-center">
+          <Backpack class="w-6 h-6 text-blue-700" />
         </div>
-        <div>
+        <div class="flex-1">
           <p class="text-sm font-medium text-gray-600">Total Elections</p>
-          <p class="text-2xl font-semibold text-gray-700">15</p>
+          <p v-if="!loading" class="text-2xl font-semibold text-gray-700">{{ stats.total_elections || 0 }}</p>
+          <div v-else class="h-7 w-16 bg-gray-200 animate-pulse rounded"></div>
         </div>
       </div>
 
+      <!-- Total Members -->
       <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
-        <div class="bg-cyan-100 w-8 h-8 rounded-lg flex items-center justify-center">
-          <Vote class="w-6 h-6 text-cyan-600" />
-        </div>
-        <div>
-          <p class="text-sm font-medium text-gray-600">Total Votes</p>
-          <p class="text-2xl font-semibold text-gray-700">15</p>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
-        <div class="bg-orange-100 w-8 h-8 rounded-lg flex items-center justify-center">
+        <div class="bg-orange-100 w-10 h-10 rounded-lg flex items-center justify-center">
           <Users class="w-6 h-6 text-orange-600" />
         </div>
-        <div>
+        <div class="flex-1">
           <p class="text-sm font-medium text-gray-600">Total Members</p>
-          <p class="text-2xl font-semibold text-gray-700">100</p>
+          <p v-if="!loading" class="text-2xl font-semibold text-gray-700">{{ stats.total_members || 0 }}</p>
+          <div v-else class="h-7 w-16 bg-gray-200 animate-pulse rounded"></div>
         </div>
       </div>
 
+      <!-- Eligible Voters -->
       <div class="bg-white rounded-lg shadow p-6 flex items-center gap-6 hover:shadow-lg">
-        <div class="bg-emerald-100 w-8 h-8 rounded-lg flex items-center justify-center">
-          <UserCheck class="w-6 h-6 text-emerald-600" />
+        <div class="bg-emerald-100 w-10 h-10 rounded-lg flex items-center justify-center">
+          <Vote class="w-6 h-6 text-emerald-600" />
         </div>
-        <div>
-          <p class="text-sm font-medium text-gray-600">Paid Members</p>
-          <p class="text-2xl font-semibold text-gray-700">50</p>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-600">Eligible Voters</p>
+          <p v-if="!loading" class="text-2xl font-semibold text-gray-700">{{ stats.eligible_voters || 0 }}</p>
+          <div v-else class="h-7 w-16 bg-gray-200 animate-pulse rounded"></div>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <!-- Quick Actions -->
     <div

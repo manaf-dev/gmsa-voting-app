@@ -67,7 +67,7 @@ const fetchEntries = async () => {
 const filteredEntries = computed<ExhibitionEntry[]>(() => {
   if (!searchQuery.value) return entries.value
   return entries.value.filter((entry) =>
-    `${entry.first_name} ${entry.last_name} ${entry.student_id}`
+    `${entry.first_name} ${entry.last_name} ${entry.phone_number}`
       .toLowerCase()
       .includes(searchQuery.value.toLowerCase()),
   )

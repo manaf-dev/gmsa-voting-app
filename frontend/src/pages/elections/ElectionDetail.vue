@@ -230,10 +230,10 @@ const performDeleteAction = async () => {
           <p class="text-sm text-gray-600 mb-3">
             {{ position.description || 'No description provided' }}
           </p>
-          <div class="flex justify-between items-center text-xs text-gray-500">
+          <!-- <div class="flex justify-between items-center text-xs text-gray-500">
             <span>Max Candidates: {{ position.max_candidates || 'N/A' }}</span>
             <span>Votes: {{ position.total_votes || 0 }}</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

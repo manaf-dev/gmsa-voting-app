@@ -107,7 +107,7 @@ onMounted(async () => {
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm shadow-lg p-6 mb-6 rounded-xl">
+      <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm shadow-lg p-6 mb-6 rounded-xl">
         <div>
           <span class="text-gray-500">Election:</span>
           <p class="font-medium">{{ currentPosition?.election?.title }}</p>
@@ -124,7 +124,7 @@ onMounted(async () => {
           <span class="text-gray-500">Total Votes:</span>
           <p class="font-medium">{{ currentPosition?.total_votes || 0 }}</p>
         </div>
-      </div>
+      </div> -->
 
       <!-- Candidates List -->
       <div class="bg-white shadow-lg rounded-xl p-6">
@@ -200,10 +200,10 @@ onMounted(async () => {
                 <p class="text-sm text-gray-700 mt-1 line-clamp-3">{{ candidate.manifesto }}</p>
                 <p class="text-xs text-green-600 mt-1 font-medium">Click to read full manifesto</p>
               </div>
-              <div>
+              <!-- <div>
                 <span class="text-xs text-gray-500">Votes:</span>
                 <p class="text-sm font-medium">{{ candidate.vote_count || 0 }}</p>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
