@@ -119,6 +119,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/verification',
+      name: 'verification',
+      component: () => import('../pages/admin/VerificationPage.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/help',
       name: 'help',
       component: () => import('../pages/voter/Help.vue')
