@@ -2,11 +2,14 @@
 import { ArrowBigLeft, Eye, EyeOff } from 'lucide-vue-next'
 import BaseBtn from '@/components/BaseBtn.vue'
 import { reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
 const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
 const UserDetails = reactive({
   username: '',
@@ -21,7 +24,8 @@ const SubmitUserDetails = async () => {
   if (loading.value) return
   loading.value = true
   try {
-    await authStore.login(UserDetails)
+  const redirectTo = (route.query.redirect as string) || '/dashboard'
+  await authStore.login(UserDetails, redirectTo)
     toast.success('Login successful!')
   } catch (error) {
     toast.error('Invalid credentials')

@@ -305,7 +305,7 @@ def election_results(request, election_id):
     total_eligible_voters = User.objects.filter(is_active=True, is_staff=False).count()
     total_votes_cast = election.total_votes
     total_unique_voters = election.total_voters
-    voter_turnout = (total_unique_voters / total_eligible_voters * 100) if total_eligible_voters else 0
+    voter_turnout = round((total_unique_voters / total_eligible_voters * 100), 2) if total_eligible_voters else 0
 
     # Persist summary for admins
     try:

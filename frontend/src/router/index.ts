@@ -143,17 +143,17 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
+    next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
   
   if (to.meta.requiresEC && !authStore.isECMember) {
-    next('/dashboard')
+    next({ name: 'dashboard' })
     return
   }
 
   if (to.meta.guest && authStore.isAuthenticated) {
-    next('/dashboard')
+    next({ name: 'dashboard' })
     return
   }
 
