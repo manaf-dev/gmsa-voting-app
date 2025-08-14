@@ -142,7 +142,7 @@ const lastPage = () => {
             <BaseInput
               v-model="searchQuery"
               type="search"
-              placeholder="Search by name or id..."
+              placeholder="Search by name or phone number"
               @input="searchUsers"
             />
           </div>

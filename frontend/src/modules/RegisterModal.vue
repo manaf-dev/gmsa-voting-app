@@ -27,13 +27,11 @@ const UserDetails = reactive({
   phone: '',
   year_of_study: '',
   program: '',
-  // password: '',
-  // confirm_password: '',
 })
 
 const SubmitUserDetails = async () => {
   try {
-    const response = await authStore.registerNewUser(UserDetails)
+    await authStore.registerNewUser(UserDetails)
     toast.success('Registration successful!')
     emit('member-registered')
     emit('close') // Close modal on success
