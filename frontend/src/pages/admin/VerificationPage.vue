@@ -3,8 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
-import AddMemberModal from '@/modules/AddMemberModal.vue'
-import { ArrowLeft, ChevronsLeft, ChevronsRight, CheckCheck, RotateCw } from 'lucide-vue-next'
+import RegisterModal from '@/modules/RegisterModal.vue'
+import { ArrowLeft, ChevronsLeft, ChevronsRight, CheckCheck, RotateCw, Plus } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
@@ -121,7 +121,16 @@ const lastPage = () => {
         >
           <ArrowLeft />
         </BaseBtn>
-        <h1 class="text-xl font-semibold text-gray-700 truncate">Members</h1>
+        <h1 class="text-xl font-semibold text-gray-700 truncate">Register</h1>
+      </template>
+      <template #right>
+        <BaseBtn
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
+          @click="showAddMemberModal = true"
+        >
+          <Plus class="h-5 w-5 mr-2" />
+          Member
+        </BaseBtn>
       </template>
     </NavBar>
 
@@ -139,6 +148,7 @@ const lastPage = () => {
           </div>
           <div class="text-sm mt-4 text-gray-600 flex justify-start md:gap-4 items-center">
             <p>Total members: {{ totalMembers }}</p>
+            <p>Verified members: {{}}</p>
           </div>
         </div>
 
@@ -224,7 +234,11 @@ const lastPage = () => {
       </div>
     </div>
 
-    <!-- Add Member Modal -->
-    <AddMemberModal :show="showAddMemberModal" @close="showAddMemberModal = false" />
+    <!-- Register Member Modal -->
+    <RegisterModal
+      :show="showAddMemberModal"
+      @close="showAddMemberModal = false"
+      @member-registered="fetchEntries"
+    />
   </div>
 </template>
