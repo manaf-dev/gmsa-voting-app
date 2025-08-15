@@ -11,9 +11,20 @@ import router from './router'
 
 const app = createApp(App)
 
+const options = {
+  position: "top-right",
+  timeout: 2000,
+  closeOnClick: true,
+  pauseOnFocusLoss: true,
+  draggable: true,
+  draggablePercent: 60,
+  showCloseButtonOnHover: true,
+  closeButton: "button",
+  icon: true,
+  rtl: false,
+};
 
-
-app.use(Toast);
+app.use(Toast, options);
 app.use(createPinia())
 app.use(router)
 
