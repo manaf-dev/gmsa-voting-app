@@ -76,6 +76,7 @@ apiInstance.interceptors.response.use(
       // Refresh failed; clear auth header and redirect to login
       delete apiInstance.defaults.headers.common['Authorization']
     sessionStorage.removeItem('auth_access')
+    localStorage.removeItem('auth_user')
       window.location.href = '/login'
     }
 

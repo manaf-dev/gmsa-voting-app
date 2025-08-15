@@ -14,6 +14,8 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .models import User, AcademicYear
 from .serializers import (
     UserRegistrationSerializer,
@@ -415,7 +417,13 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except (AuthenticationFailed, InvalidToken, TokenError):
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            # Fallback to generic 400 for any unexpected validation issue
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
 
         # Pull tokens
