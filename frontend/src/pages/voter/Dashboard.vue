@@ -122,7 +122,7 @@ const refreshUser = () => {
     <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 mt-14">
       <div>
         <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">
-          Welcome back, {{ authStore.user.first_name }}
+          Welcome {{ authStore.user.first_name }},
         </h2>
         <p class="mt-1 text-sm text-gray-600 font-normal">
           {{ authStore.user.year_of_study }} | {{ authStore.user.program }}
@@ -296,7 +296,7 @@ const refreshUser = () => {
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
                   <router-link
                     :to="`/elections/${election.id}/results`"
-                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors"
+                    :class="['flex-1', 'bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'text-center', 'py-3', 'px-4', 'rounded-lg', 'font-medium', 'transition-colors', !election.results_published ? 'opacity-50 pointer-events-none cursor-not-allowed' : '']"
                   >
                     📊 View Results
                   </router-link>
