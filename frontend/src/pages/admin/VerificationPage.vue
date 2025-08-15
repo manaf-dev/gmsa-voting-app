@@ -30,7 +30,8 @@ const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const entries = ref<ExhibitionEntry[]>([])
-const verifyingUser = ref(false)
+// Track which entry is currently being verified (per-row state)
+const verifyingEntryId = ref<string | null>(null)
 const Loading = ref(false)
 const showVerifiedOnly = ref(false) // NEW toggle
 
@@ -40,16 +41,16 @@ const toast = useToast()
 
 // Handle user verification
 const verifyEntry = async (entryId: string) => {
-  verifyingUser.value = true
+  if (verifyingEntryId.value) return // prevent parallel clicks
+  verifyingEntryId.value = entryId
   try {
     await electionStore.verifyExhibition(entryId)
     toast.success('Member verified successfully')
-
     await fetchEntries()
   } catch (error) {
     toast.error('Failed to verify member')
   } finally {
-    verifyingUser.value = false
+    verifyingEntryId.value = null
   }
 }
 
@@ -200,10 +201,10 @@ const lastPage = () => {
                     <BaseBtn
                       v-if="!entry.is_verified"
                       @click="verifyEntry(entry.id)"
-                      class="inline-flex items-center gap-1.5 text-white bg-green-500 px-3 py-1 rounded-md hover:bg-green-600 transition-colors"
-                      :disabled="verifyingUser"
+                      class="inline-flex items-center gap-1.5 text-white bg-green-500 px-3 py-1 rounded-md hover:bg-green-600 transition-colors disabled:opacity-60"
+                      :disabled="verifyingEntryId === entry.id"
                     >
-                      <template v-if="verifyingUser">
+                      <template v-if="verifyingEntryId === entry.id">
                         <RotateCw class="h-3.5 w-3.5 animate-spin" />
                         Verifying...
                       </template>
