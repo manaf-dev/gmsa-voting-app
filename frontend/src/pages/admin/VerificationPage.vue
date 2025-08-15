@@ -30,7 +30,7 @@ const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const entries = ref<ExhibitionEntry[]>([])
-const verifyingUsers = ref<Set<string>>(new Set())
+const verifyingUser = ref(false)
 const Loading = ref(false)
 const showVerifiedOnly = ref(false) // NEW toggle
 
@@ -40,10 +40,7 @@ const toast = useToast()
 
 // Handle user verification
 const verifyEntry = async (entryId: string) => {
-  if (verifyingUsers.value.has(entryId)) return
-
-  verifyingUsers.value.add(entryId)
-  Loading.value = true
+  verifyingUser.value = true
   try {
     await electionStore.verifyExhibition(entryId)
     toast.success('Member verified successfully')
@@ -52,21 +49,17 @@ const verifyEntry = async (entryId: string) => {
   } catch (error) {
     toast.error('Failed to verify member')
   } finally {
-    verifyingUsers.value.delete(entryId)
-    Loading.value = false
+    verifyingUser.value = false
   }
 }
 
 // Fetch exhibition entries
 const fetchEntries = async () => {
-  Loading.value = true
   try {
     const response = await electionStore.fetchExhibition()
     entries.value = response.entries
   } catch (error) {
-    toast.error('Failed to fetch members')
-  } finally {
-    Loading.value = false
+    throw error
   }
 }
 
@@ -97,8 +90,15 @@ const totalMembers = computed(() => filteredEntries.value.length)
 const verifiedMembers = computed(() => entries.value.filter((entry) => entry.is_verified).length)
 
 // Fetch entries on mount
-onMounted(() => {
-  fetchEntries()
+onMounted(async () => {
+  Loading.value = true
+  try {
+    await fetchEntries()
+  } catch (error) {
+    toast.error('Failed to fetch members')
+  } finally {
+    Loading.value = false
+  }
 })
 
 // Search handler
@@ -201,9 +201,9 @@ const lastPage = () => {
                       v-if="!entry.is_verified"
                       @click="verifyEntry(entry.id)"
                       class="inline-flex items-center gap-1.5 text-white bg-green-500 px-3 py-1 rounded-md hover:bg-green-600 transition-colors"
-                      :disabled="verifyingUsers.has(entry.id)"
+                      :disabled="verifyingUser"
                     >
-                      <template v-if="verifyingUsers.has(entry.id)">
+                      <template v-if="verifyingUser">
                         <RotateCw class="h-3.5 w-3.5 animate-spin" />
                         Verifying...
                       </template>
