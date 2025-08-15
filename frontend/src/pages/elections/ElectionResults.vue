@@ -3,15 +3,17 @@ import { ArrowLeft, CheckCircle, Printer } from 'lucide-vue-next'
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
 const router = useRouter()
 const id = route.params.id as string
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const data = ref<any>(null)
-const revealResults = ref(false)
+const revealResults = computed(() => (authStore.user.is_ec_member === false ? true : false))
 
 const election = computed(() => data.value?.election || {})
 const positions = computed(() => data.value?.positions || [])
@@ -135,7 +137,10 @@ const printPage = () => {
               <span class="font-medium block">{{ fmt12h(election.results_published_at) }}</span>
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-center gap-2">
+          <div
+            v-if="authStore.user.is_admin === true"
+            class="mt-4 flex items-center justify-center gap-2"
+          >
             <button
               v-if="election.can_review_results && !election.results_published"
               @click="publish"
@@ -152,10 +157,10 @@ const printPage = () => {
             </button>
             <!-- reveal results button -->
             <button
-            @click="revealResults = !revealResults"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"
+              @click="revealResults = !revealResults"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"
             >
-            {{ revealResults ? 'Hide Results' : 'Reveal Results' }}
+              {{ revealResults ? 'Hide Results' : 'Reveal Results' }}
             </button>
             <button
               @click="printPage"
@@ -166,10 +171,8 @@ const printPage = () => {
           </div>
         </div>
 
-
         <!-- Results by Position -->
-         <div v-show="revealResults">
-
+        <div v-show="revealResults">
           <div class="space-y-6 mt-5">
             <div
               v-if="positions.length === 0"
@@ -287,7 +290,7 @@ const printPage = () => {
               </div>
             </div>
           </div>
-         </div>
+        </div>
       </template>
     </div>
   </div>

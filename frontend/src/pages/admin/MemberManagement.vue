@@ -36,7 +36,7 @@ const paginatedUsers = computed(() => {
 })
 
 const totalMembers = computed(() => filteredUsers.value.length)
-
+ 
 // Fetch users on mount
 const fetchUsers = async () => {
   loading.value = true
