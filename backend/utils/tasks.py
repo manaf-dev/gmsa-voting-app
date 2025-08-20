@@ -1,5 +1,5 @@
 """
-Celery tasks for GMSA Voting System
+Celery tasks for BESA Voting System
 
 This module contains all async tasks including:
 - SMS sending tasks

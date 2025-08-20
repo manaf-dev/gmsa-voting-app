@@ -389,6 +389,20 @@ async function verifyExhibition(entryId: string | number, action: 'verify' | 'pr
   }
 }
 
+async function bulkVerifyExhibition() {
+  loading.value = true
+  try {
+    const res = await apiInstance.post('/accounts/exhibition/bulk-verify/')
+    return res.data
+  } catch (err: any) {
+    console.error('bulkVerifyExhibition error:', err?.response?.data || err)
+    error.value = 'Failed to bulk verify exhibition entries'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
 // Fetch admin (EC) statistics
 async function fetchAdminStats() {
   loading.value = true
@@ -419,6 +433,7 @@ async function fetchAdminStats() {
     createElection,
     fetchExhibition,
     verifyExhibition,
+    bulkVerifyExhibition,
   fetchAdminStats,
   updateElection,
   deleteElection,

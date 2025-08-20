@@ -111,7 +111,7 @@ const exportToExcel = async () => {
     
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, '-');
-    link.download = `gmsa_exhibition_register_${timestamp}.xlsx`;
+    link.download = `besa_exhibition_register_${timestamp}.xlsx`;
     
     document.body.appendChild(link);
     link.click();

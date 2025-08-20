@@ -13,6 +13,7 @@ from .exhibition import (
     ExhibitionPromoteVerifiedView,
     ExhibitionVerifyPromoteView,
     ExhibitionEntriesListView,  # new
+    ExhibitionBulkVerifyView,   # new bulk verify
 )
 
 urlpatterns = [
@@ -69,4 +70,5 @@ urlpatterns = [
     path("exhibition/promote/", ExhibitionPromoteVerifiedView.as_view(), name="exhibition-promote"),
     path("exhibition/verify-promote/<uuid:entry_id>/", ExhibitionVerifyPromoteView.as_view(), name="exhibition-verify-promote"),
     path("exhibition/entries/", ExhibitionEntriesListView.as_view(), name="exhibition-entries"),
+    path("exhibition/bulk-verify/", ExhibitionBulkVerifyView.as_view(), name="exhibition-bulk-verify"),
 ]

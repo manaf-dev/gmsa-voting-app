@@ -16,6 +16,7 @@ from docs.accounts import (
     exhibition_promote_schema,
     exhibition_verify_promote_schema,
     exhibition_entries_list_schema,
+    exhibition_bulk_verify_schema,
 )
 
 class ExhibitionLookupSerializer(serializers.Serializer):
@@ -313,3 +314,99 @@ class ExhibitionEntriesListView(APIView):
             })
 
         return Response({'count': len(entries), 'entries': entries})
+
+
+@exhibition_bulk_verify_schema
+class ExhibitionBulkVerifyView(APIView):
+    """Bulk verify all unverified exhibition entries and send SMS to each."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not (request.user.is_ec_member or request.user.is_staff):
+            return Response({'detail': 'Forbidden'}, status=403)
+
+        # Check if there are any unverified entries first (without select_for_update)
+        if not ExhibitionEntry.objects.filter(is_verified=False).exists():
+            return Response({
+                'status': 'no_entries',
+                'message': 'No unverified entries found',
+                'verified_count': 0,
+                'promoted_count': 0,
+                'sms_sent_count': 0
+            })
+
+        verified_count = 0
+        promoted_count = 0
+        sms_sent_count = 0
+        errors = []
+
+        with transaction.atomic():
+            # Get all unverified entries with select_for_update within transaction
+            unverified_entries = ExhibitionEntry.objects.filter(is_verified=False).select_for_update()
+            
+            for entry in unverified_entries:
+                try:
+                    # Mark as verified
+                    entry.is_verified = True
+                    entry.verified_by = request.user
+                    entry.verified_at = timezone.now()
+                    verified_count += 1
+
+                    # Check if user already exists with this phone
+                    if User.objects.filter(phone_number=entry.phone_number).exists():
+                        entry.save()
+                        continue
+
+                    # Generate student ID if missing
+                    sid = entry.student_id or f"EXH{User.objects.count()+1:05d}"
+                    if User.objects.filter(student_id=sid).exists():
+                        suffix = User.objects.count() + 1
+                        while User.objects.filter(student_id=f"{sid}-{suffix}").exists():
+                            suffix += 1
+                        sid = f"{sid}-{suffix}"
+
+                    # Generate username
+                    username = _generate_username(entry.first_name, entry.last_name, sid)
+                    raw_password = _generate_password()
+
+                    # Create user account
+                    user = User(
+                        username=username,
+                        student_id=sid,
+                        first_name=entry.first_name,
+                        last_name=entry.last_name,
+                        phone_number=entry.phone_number,
+                        program=entry.program,
+                        year_of_study=entry.year_of_study,
+                        hall=entry.hall or ''
+                    )
+                    user.set_password(raw_password)
+                    user.can_vote = True
+                    user.changed_password = False
+                    user.save()
+
+                    # Link to exhibition entry
+                    entry.user = user
+                    entry.save()
+                    promoted_count += 1
+
+                    # Send SMS in background
+                    if user.phone_number:
+                        try:
+                            send_welcome_sms(user, raw_password, async_send=True)
+                            sms_sent_count += 1
+                        except Exception as e:
+                            errors.append(f"SMS failed for {user.phone_number}: {str(e)}")
+
+                except Exception as e:
+                    errors.append(f"Failed to process entry {entry.id}: {str(e)}")
+                    continue
+
+        return Response({
+            'status': 'completed',
+            'message': f'Bulk verification completed. {verified_count} entries verified, {promoted_count} users created.',
+            'verified_count': verified_count,
+            'promoted_count': promoted_count,
+            'sms_sent_count': sms_sent_count,
+            'errors': errors[:10]  # Limit errors to first 10
+        })

@@ -137,7 +137,7 @@
             <div>
               <dt class="text-lg font-medium text-gray-900">Why can't I vote in elections?</dt>
               <dd class="mt-2 text-gray-600">
-                To vote in GMSA elections, you must have paid your membership dues for the current
+                To vote in BESA elections, you must have paid your membership dues for the current
                 academic year. If you haven't paid, you'll see a payment reminder when accessing
                 elections. Complete your dues payment and you'll be able to vote immediately.
               </dd>
@@ -165,10 +165,10 @@
             </div>
 
             <div>
-              <dt class="text-lg font-medium text-gray-900">How can I make a donation to GMSA?</dt>
+              <dt class="text-lg font-medium text-gray-900">How can I make a donation to BESA?</dt>
               <dd class="mt-2 text-gray-600">
                 You can make donations through the Payment section. Select "Make Donation," enter
-                your desired amount, and complete the payment. Donations support GMSA activities and
+                your desired amount, and complete the payment. Donations support BESA activities and
                 programs. You can choose to make anonymous donations if you prefer.
               </dd>
             </div>
@@ -211,7 +211,7 @@
                       d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  <span class="text-gray-600">ec@gmsa-university.org</span>
+                  <span class="text-gray-600">ec@besa-university.org</span>
                 </div>
                 <div class="flex items-center">
                   <svg
@@ -249,7 +249,7 @@
                       d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  <span class="text-gray-600">support@gmsa-university.org</span>
+                  <span class="text-gray-600">support@besa-university.org</span>
                 </div>
                 <div class="flex items-center">
                   <svg

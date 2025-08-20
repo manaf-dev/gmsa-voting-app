@@ -96,6 +96,29 @@ exhibition_entries_list_schema = extend_schema(
     tags=["Exhibition"],
 )
 
+exhibition_bulk_verify_schema = extend_schema(
+    summary="Bulk verify all exhibition entries (EC only)",
+    description="""
+    Verify all unverified exhibition entries at once and create user accounts for each.
+    This will:
+    1. Mark all unverified entries as verified
+    2. Create user accounts with generated credentials
+    3. Send welcome SMS to each new user
+    
+    Returns counts of verified entries, created users, and SMS sent.
+    """,
+    request=None,
+    responses={200: inline_serializer(name="ExhibitionBulkVerifyResponse", fields={
+        'status': serializers.CharField(),
+        'message': serializers.CharField(),
+        'verified_count': serializers.IntegerField(),
+        'promoted_count': serializers.IntegerField(),
+        'sms_sent_count': serializers.IntegerField(),
+        'errors': serializers.ListField(child=serializers.CharField()),
+    })},
+    tags=["Exhibition"],
+)
+
 
 register_user_schema = extend_schema(
     summary="Register a new user",

@@ -18,7 +18,7 @@
           Voter Register Exhibition
         </h1>
         <p class="mt-3 text-sm md:text-base text-gray-600 max-w-md mx-auto">
-          Verify your presence on the GMSA voter register. If you're not listed, submit your details
+          Verify your presence on the BESA voter register. If you're not listed, submit your details
           for verification.
         </p>
       </div>
@@ -240,7 +240,7 @@
 
       <!-- Footer note -->
       <p class="mt-10 text-[11px] tracking-wide text-center text-gray-500">
-        Data is used solely for election eligibility verification • GMSA EC
+        Data is used solely for election eligibility verification • BESA EC
       </p>
     </div>
   </div>

@@ -69,12 +69,12 @@ class InitiatePaymentView(APIView):
                 amount = academic_year_obj.dues_amount
             else:
                 # Fallback to default amount
-                amount = Decimal(settings.GMSA_DUES_AMOUNT)
+                amount = Decimal(settings.BESA_DUES_AMOUNT)
 
         # Generate unique reference
         import uuid
 
-        reference = f"gmsa_{payment_type}_{uuid.uuid4().hex[:12]}"
+        reference = f"besa_{payment_type}_{uuid.uuid4().hex[:12]}"
 
         # Create payment record
         payment_metadata = serializer.validated_data.copy()
@@ -103,7 +103,7 @@ class InitiatePaymentView(APIView):
             "email": (
                 request.user.email
                 if request.user.is_authenticated
-                else "anonymous@gmsa.com"
+                else "anonymous@besa.com"
             ),
             "currency": "GHS",
             "callback_url": f"{request.build_absolute_uri('/api/payments/callback/')}",
@@ -251,7 +251,7 @@ class PaystackWebhookView(APIView):
                             sms = SMSService()
                             amount_str = f"{payment.amount:.2f} {payment.currency}"
                             msg = (
-                                f"Alhamdulillah! Your GMSA donation of {amount_str} was received. Jazakallahu Khairan."
+                                f"Alhamdulillah! Your BESA donation of {amount_str} was received. Jazakallahu Khairan."
                             )
                             sms.send_single_sms(payment.user.phone_number, msg)
                     except Exception:  # noqa: BLE001

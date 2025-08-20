@@ -45,7 +45,7 @@ const SubmitElectionDetails = async () => {
           <ArrowLeft class="w-5 h-5 text-gray-700" />
         </button>
         <h1 class="text-2xl font-bold text-gray-900">Create New Election</h1>
-        <p class="mt-1 text-sm text-gray-600 mb-4">Set up a new election for GMSA members</p>
+        <p class="mt-1 text-sm text-gray-600 mb-4">Set up a new election for BESA members</p>
       </div>
       <!-- Form for creating a new election -->
       <form @submit.prevent="SubmitElectionDetails">
@@ -57,7 +57,7 @@ const SubmitElectionDetails = async () => {
             <BaseInput
               v-model="ElectionDetails.title"
               type="text"
-              placeholder="e.g., GMSA Executive Elections 2025/2026"
+              placeholder="e.g., BESA Executive Elections 2025/2026"
               :required="true"
             />
           </div>
@@ -79,7 +79,7 @@ const SubmitElectionDetails = async () => {
             <BaseInput
               v-model="ElectionDetails.start_date"
               type="datetime-local"
-              placeholder="e.g., GMSA Executive Elections 2025/2026"
+              placeholder="e.g., BESA Executive Elections 2025/2026"
               :required="true"
             />
           </div>

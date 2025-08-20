@@ -26,12 +26,16 @@ interface ExhibitionEntry {
 
 const router = useRouter()
 const showAddMemberModal = ref(false)
+const showBulkVerifyModal = ref(false)
+const showResultsModal = ref(false)
+const bulkVerifyResults = ref<any>(null)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const entries = ref<ExhibitionEntry[]>([])
 // Track which entry is currently being verified (per-row state)
 const verifyingEntryId = ref<string | null>(null)
+const bulkVerifying = ref(false)
 const Loading = ref(false)
 const showVerifiedOnly = ref(false) // NEW toggle
 
@@ -51,6 +55,39 @@ const verifyEntry = async (entryId: string) => {
     toast.error('Failed to verify member')
   } finally {
     verifyingEntryId.value = null
+  }
+}
+
+// Bulk verify all unverified entries
+const bulkVerifyAll = async () => {
+  if (bulkVerifying.value) return
+  
+  // Show confirmation modal instead of browser confirm
+  showBulkVerifyModal.value = true
+}
+
+// Execute bulk verification after modal confirmation
+const executeBulkVerification = async () => {
+  bulkVerifying.value = true
+  
+  try {
+    const response = await electionStore.bulkVerifyExhibition()
+    
+    // Store results for display in modal
+    bulkVerifyResults.value = response
+    
+    // Close confirmation modal and show results modal
+    showBulkVerifyModal.value = false
+    showResultsModal.value = true
+    
+    await fetchEntries()
+  } catch (error) {
+    console.error('Bulk verification failed:', error)
+    toast.error('Bulk verification failed. Please try again.')
+    // Close confirmation modal on error
+    showBulkVerifyModal.value = false
+  } finally {
+    bulkVerifying.value = false
   }
 }
 
@@ -78,6 +115,10 @@ const filteredEntries = computed<ExhibitionEntry[]>(() => {
     )
   }
   return result
+})
+
+const unverifiedMembers = computed(() => {
+  return entries.value.filter(entry => !entry.is_verified).length
 })
 
 // Pagination
@@ -136,13 +177,24 @@ const lastPage = () => {
         <h1 class="text-xl font-semibold text-gray-700 truncate">Register</h1>
       </template>
       <template #right>
-        <BaseBtn
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
-          @click="showAddMemberModal = true"
-        >
-          <Plus class="h-5 w-5 mr-2" />
-          Member
-        </BaseBtn>
+        <div class="flex gap-2">
+          <BaseBtn
+            v-if="unverifiedMembers > 0"
+            @click="bulkVerifyAll"
+            :disabled="bulkVerifying"
+            class="inline-flex items-center px-3 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors duration-200"
+          >
+            <CheckCheck class="h-4 w-4 mr-2" :class="{ 'animate-spin': bulkVerifying }" />
+            {{ bulkVerifying ? 'Verifying All...' : 'Verify All' }}
+          </BaseBtn>
+          <BaseBtn
+            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
+            @click="showAddMemberModal = true"
+          >
+            <Plus class="h-5 w-5 mr-2" />
+            Member
+          </BaseBtn>
+        </div>
       </template>
     </NavBar>
 
@@ -260,5 +312,106 @@ const lastPage = () => {
       @close="showAddMemberModal = false"
       @member-registered="fetchEntries"
     />
+
+    <!-- Bulk Verify Confirmation Modal -->
+    <div v-if="showBulkVerifyModal" class="fixed inset-0 bg-gray-600/30 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-30 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <!-- Loading overlay for the modal -->
+        <div v-if="bulkVerifying" class="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-md z-10">
+          <div class="text-center">
+            <RotateCw class="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+            <p class="text-sm text-gray-600 font-medium">Verifying entries...</p>
+            <p class="text-xs text-gray-500 mt-1">This may take a few moments</p>
+          </div>
+        </div>
+        
+        <div class="mt-3 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+            <CheckCheck class="h-6 w-6 text-yellow-600" />
+          </div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Confirm Bulk Verification</h3>
+          <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500 mb-4">
+              This will verify all {{ unverifiedMembers }} unverified entries and automatically:
+            </p>
+            
+            <p class="text-sm text-red-600 font-medium">This action cannot be undone.</p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <div class="flex gap-3 justify-center">
+              <button
+                @click="showBulkVerifyModal = false"
+                :disabled="bulkVerifying"
+                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                @click="executeBulkVerification"
+                :disabled="bulkVerifying"
+                class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+              >
+                <RotateCw v-if="bulkVerifying" class="h-4 w-4 mr-2 animate-spin" />
+                <CheckCheck v-else class="h-4 w-4 mr-2" />
+                {{ bulkVerifying ? 'Verifying...' : `Verify All (${unverifiedMembers})` }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Verify Results Modal -->
+    <div v-if="showResultsModal && bulkVerifyResults" class="fixed inset-0 bg-gray-600/30 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-30 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+            <CheckCheck class="h-6 w-6 text-green-600" />
+          </div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Bulk Verification Complete</h3>
+          <div class="mt-4 px-7 py-3">
+            <div class="text-sm text-left space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Entries verified:</span>
+                <span class="font-semibold text-green-600">{{ bulkVerifyResults.verified_count }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">User accounts created:</span>
+                <span class="font-semibold text-blue-600">{{ bulkVerifyResults.promoted_count }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">SMS notifications sent:</span>
+                <span class="font-semibold text-purple-600">{{ bulkVerifyResults.sms_sent_count }}</span>
+              </div>
+              <div v-if="bulkVerifyResults.errors && bulkVerifyResults.errors.length > 0" class="mt-4 p-3 bg-yellow-50 rounded">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Errors encountered:</span>
+                  <span class="font-semibold text-red-600">{{ bulkVerifyResults.errors.length }}</span>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                  <details>
+                    <summary class="cursor-pointer hover:text-gray-700">View error details</summary>
+                    <ul class="mt-2 space-y-1">
+                      <li v-for="error in bulkVerifyResults.errors" :key="error" class="text-red-600">
+                        {{ error }}
+                      </li>
+                    </ul>
+                  </details>
+                </div>
+              </div>
+            </div>
+            <p class="text-sm text-green-600 font-medium mt-4">{{ bulkVerifyResults.message }}</p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button
+              @click="showResultsModal = false"
+              class="px-6 py-2 bg-green-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

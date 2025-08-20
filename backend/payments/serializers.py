@@ -39,7 +39,7 @@ class InitiatePaymentSerializer(serializers.Serializer):
                     # Use default if academic year not found
                     from django.conf import settings
 
-                    attrs["amount"] = settings.GMSA_DUES_AMOUNT
+                    attrs["amount"] = settings.BESA_DUES_AMOUNT
             else:
                 # Use current year's amount
                 current_year = AcademicYear.get_current_year()
@@ -49,7 +49,7 @@ class InitiatePaymentSerializer(serializers.Serializer):
                 else:
                     from django.conf import settings
 
-                    attrs["amount"] = settings.GMSA_DUES_AMOUNT
+                    attrs["amount"] = settings.BESA_DUES_AMOUNT
                     # Set current academic year string
                     attrs["academic_year"] = AcademicYear.get_current_year_string()
 

@@ -204,8 +204,8 @@ JWT_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
 JWT_COOKIE_SAMESITE = "Lax"
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "GMSA Voting System API",
-    "DESCRIPTION": "API documentation for the GMSA Voting System",
+    "TITLE": "BESA Voting System API",
+    "DESCRIPTION": "API documentation for the BESA Voting System",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
@@ -217,7 +217,7 @@ SPECTACULAR_SETTINGS = {
 # EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 # EMAIL_HOST_USER = config("EMAIL_HOST_USER", "deen")
 # EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", "password")
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", "AAMUSTED GMSA")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", "AAMUSTED BESA")
 
 
 # Paystack configuration
@@ -226,7 +226,7 @@ PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
 
 # mnotify SMS configuration
 MNOTIFY_API_KEY = config("MNOTIFY_API_KEY", default="")
-MNOTIFY_SENDER_ID = config("MNOTIFY_SENDER_ID", default="GMSA")
+MNOTIFY_SENDER_ID = config("MNOTIFY_SENDER_ID", default="BESA")
 MNOTIFY_BASE_URL = config("MNOTIFY_BASE_URL", default="https://api.mnotify.com/api")
 
 # Frontend URL for SMS links
@@ -241,7 +241,7 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-GMSA_DUES_AMOUNT = 30.00  # Amount for GMSA dues
+BESA_DUES_AMOUNT = 30.00  # Amount for BESA dues
 
 # Academic year settings
 ACADEMIC_YEAR_START_MONTH = 9  # September
@@ -298,7 +298,7 @@ CELERY_TASK_QUEUES = {
 VOTING_ENCRYPTION_KEY = config("VOTING_ENCRYPTION_KEY", default="")
 VOTE_HASH_SECRET = config("VOTE_HASH_SECRET", default="voting-hash-secret-key-2024")
 VOTER_ANONYMIZATION_SALT = config(
-    "VOTER_ANONYMIZATION_SALT", default="gmsa-voter-salt-2024"
+    "VOTER_ANONYMIZATION_SALT", default="besa-voter-salt-2024"
 )
 
 # Security settings
@@ -329,20 +329,20 @@ WHITELISTED_IPS = config(
 )
 
 # Rate limiting (using cache)
-CACHES = {
-    "default": {
-    "BACKEND": "django.core.cache.backends.redis.RedisCache",
-    "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
-        "KEY_PREFIX": "gmsa_voting",
-        "TIMEOUT": 300,  # 5 minutes default
-    },
-    # Local in-memory fallback cache for when Redis is unavailable
-    "local": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "gmsa-voting-local",
-        "TIMEOUT": 300,
-    },
-}
+# CACHES = {
+#     "default": {
+#     "BACKEND": "django.core.cache.backends.redis.RedisCache",
+#     "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
+#         "KEY_PREFIX": "besa_voting",
+#         "TIMEOUT": 300,  # 5 minutes default
+#     },
+#     # Local in-memory fallback cache for when Redis is unavailable
+#     "local": {
+#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#         "LOCATION": "besa-voting-local",
+#         "TIMEOUT": 300,
+#     },
+# }
 
 # Voting security defaults
 VOTING_SECURITY_DEFAULTS = {

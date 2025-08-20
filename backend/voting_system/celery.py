@@ -1,5 +1,5 @@
 """
-Celery configuration for GMSA Voting System
+Celery configuration for BESA Voting System
 
 This module configures Celery for handling async SMS tasks including:
 - Welcome messages for new users (bulk registration)

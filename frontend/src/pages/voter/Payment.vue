@@ -72,7 +72,7 @@ async function submitDonation() {
   <div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-white py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-xl mx-auto">
       <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold text-green-700">Support AAMUSTED GMSA</h1>
+        <h1 class="text-2xl font-bold text-green-700">Support AAMUSTED BESA</h1>
         <p class="mt-2 text-sm text-gray-600">Make a sadaqah / donation to strengthen our programmes.</p>
       </div>
 
