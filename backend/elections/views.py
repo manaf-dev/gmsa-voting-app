@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from accounts.models import ExhibitionEntry
 from .models import (
     Election,
     Position,
@@ -39,6 +40,7 @@ from docs.elections import (
     admin_elections_stats_schema,
     admin_members_schema,
     export_members_schema,
+    export_members_excel_schema,
     send_reminder_schema,
     security_status_schema,
     verify_vote_integrity_schema,
@@ -731,6 +733,130 @@ def export_members(request):
             ]
         )
 
+    return response
+
+
+@export_members_excel_schema
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def export_members_excel(request):
+    if not (request.user.is_ec_member or request.user.is_staff):
+        raise PermissionDenied("Only EC members can export exhibition register data")
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+    from django.db.models import Q
+    from datetime import datetime
+
+    # Get query parameters for filtering
+    search = request.GET.get("search", "").strip()
+
+    # Start with all exhibition entries
+    queryset = ExhibitionEntry.objects.all().select_related('verified_by', 'user')
+
+    # Apply search filters if provided
+    if search:
+        queryset = queryset.filter(
+            Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(student_id__icontains=search)
+            | Q(phone_number__icontains=search)
+            | Q(program__icontains=search)
+            | Q(year_of_study__icontains=search)
+            | Q(hall__icontains=search)
+        )
+
+    # Order by verification status first, then by name
+    queryset = queryset.order_by('-is_verified', 'first_name', 'last_name')
+
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "GMSA Exhibition Register"
+
+    # Define headers
+    headers = [
+        "Student ID",
+        "First Name",
+        "Last Name",
+        "Phone Number",
+        "Program",
+        "Year of Study", 
+        "Hall",
+    ]
+
+    # Style for headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    # Add headers with borders
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin")
+        )
+
+    # Add data rows
+    for row, entry in enumerate(queryset, 2):
+        data = [
+            entry.student_id or "",
+            entry.first_name or "",
+            entry.last_name or "",
+            entry.phone_number or "",
+            entry.program or "",
+            entry.year_of_study or "",
+            entry.hall or "",
+        ]
+        
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = Border(
+                left=Side(style="thin"),
+                right=Side(style="thin"),
+                top=Side(style="thin"),
+                bottom=Side(style="thin")
+            )
+            
+            # Color coding based on verification status
+            if entry.is_verified:
+                # Light green for verified
+                cell.fill = PatternFill(start_color="E8F5E8", end_color="E8F5E8", fill_type="solid")
+            else:
+                # Light yellow for pending
+                cell.fill = PatternFill(start_color="FFF3CD", end_color="FFF3CD", fill_type="solid")
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Create response
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"gmsa_exhibition_register_{timestamp}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    # Save workbook to response
+    wb.save(response)
     return response
 
 

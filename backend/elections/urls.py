@@ -45,6 +45,7 @@ urlpatterns = [
     path("admin/stats/", views.admin_stats, name="admin-stats"),
     path("admin/members/", views.admin_members, name="admin-members"),
     path("admin/members/export/", views.export_members, name="export-members"),
+    path("admin/members/export/excel/", views.export_members_excel, name="export-members-excel"),
     path(
         "admin/members/<uuid:member_id>/reminder/",
         views.send_reminder,

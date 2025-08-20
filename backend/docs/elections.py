@@ -410,6 +410,44 @@ admin_members_schema = extend_schema(
     tags=["Admin"],
 )
 
+export_members_excel_schema = extend_schema(
+    summary="Export exhibition register as Excel",
+    description="""
+    Export exhibition register data as an Excel file. Only EC members and staff can access this endpoint.
+    
+    Returns an Excel (.xlsx) file with exhibition entry information including:
+    - Personal details (name, student ID, phone number)
+    - Academic information (year of study, program, hall)
+    - Registration details (source, verification status, date registered)
+    - Verification information (verified by, verified at)
+    - User account creation status
+    
+    The exported file includes color coding:
+    - Green rows for verified entries
+    - Yellow rows for pending entries
+    """,
+    request=None,
+    parameters=[
+        OpenApiParameter(
+            name="search",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Search in name, student ID, phone number, program, hall, or year of study",
+        ),
+    ],
+    responses={
+        200: {
+            "description": "Excel file download",
+            "content": {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                    "schema": {"type": "string", "format": "binary"}
+                }
+            }
+        },
+    },
+    tags=["Admin"],
+)
+
 export_members_schema = extend_schema(
     summary="Export members data as CSV",
     description="""
