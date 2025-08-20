@@ -4,19 +4,25 @@ import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import AddMemberModal from '@/modules/AddMemberModal.vue'
-import { ArrowLeft, ChevronsLeft, ChevronsRight, Plus } from 'lucide-vue-next'
+import { ArrowLeft, ChevronsLeft, ChevronsRight, Plus, Download } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useElectionStore } from '@/stores/electionStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useToast } from 'vue-toastification'
+import apiInstance from '@/services/api'
 
 const router = useRouter()
+const toast = useToast()
 const showAddMemberModal = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const loading = ref(false) // NEW: loading state
+const exporting = ref(false) // Export loading state
 
 // Pinia store
 const electionStore = useElectionStore()
+const authStore = useAuthStore()
 
 // Computed bindings
 const filteredUsers = computed(() => {
@@ -77,6 +83,51 @@ const firstPage = () => {
 const lastPage = () => {
   currentPage.value = totalPages.value
 }
+
+// Export exhibition register to Excel
+const exportToExcel = async () => {
+  try {
+    exporting.value = true;
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (searchQuery.value.trim()) {
+      params.append('search', searchQuery.value.trim());
+    }
+    
+    const response = await apiInstance.get('/elections/admin/members/export/excel/', {
+      params: Object.fromEntries(params),
+      responseType: 'blob'
+    });
+    
+    // Create blob and download
+    const blob = new Blob([response.data], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, '-');
+    link.download = `gmsa_exhibition_register_${timestamp}.xlsx`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    // Show success notification
+    toast.success('Exhibition register exported successfully');
+    
+  } catch (error) {
+    console.error('Export failed:', error);
+    toast.error('Failed to export exhibition register. Please try again.');
+  } finally {
+    exporting.value = false;
+  }
+};
 </script>
 
 <template>
@@ -89,16 +140,26 @@ const lastPage = () => {
         >
           <ArrowLeft />
         </BaseBtn>
-        <h1 class="text-xl font-semibold text-gray-700 truncate">Members</h1>
+        <h1 class="text-xl font-semibold text-gray-700 truncate">Exhibition Register</h1>
       </template>
       <template #right>
-        <BaseBtn
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
-          @click="showAddMemberModal = true"
-        >
-          <Plus class="h-5 w-5 mr-2" />
-          Member
-        </BaseBtn>
+        <div class="flex gap-2">
+          <BaseBtn
+            class="inline-flex items-center px-3 py-2 border border-green-600 shadow-sm text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 transition-colors duration-200"
+            @click="exportToExcel"
+            :disabled="exporting"
+          >
+            <Download class="h-4 w-4 mr-2" :class="{ 'animate-spin': exporting }" />
+            {{ exporting ? 'Exporting...' : 'Export Register' }}
+          </BaseBtn>
+          <BaseBtn
+            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 truncate"
+            @click="showAddMemberModal = true"
+          >
+            <Plus class="h-5 w-5 mr-2" />
+            Entry
+          </BaseBtn>
+        </div>
       </template>
     </NavBar>
 
@@ -114,8 +175,11 @@ const lastPage = () => {
               @input="searchUsers"
             />
           </div>
-          <div class="text-sm mt-4 text-gray-600 flex justify-start md:gap-4 items-center">
-            <p>Total members: {{ totalMembers }}</p>
+          <div class="text-sm mt-4 text-gray-600 flex justify-between items-center">
+            <p>Total entries: {{ totalMembers }}</p>
+            <p class="text-xs text-gray-500">
+              {{ searchQuery ? 'Filtered results' : 'All entries' }} • Export includes current filters
+            </p>
           </div>
         </div>
 
@@ -175,7 +239,7 @@ const lastPage = () => {
                 </td>
               </tr>
               <tr v-if="paginatedUsers.length === 0">
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No members found.</td>
+                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No entries found.</td>
               </tr>
             </tbody>
           </table>
