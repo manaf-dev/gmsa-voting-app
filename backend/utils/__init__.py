@@ -1,1 +1,1 @@
-# Utils app for GMSA Voting System
+# Utils app for BESA Voting System

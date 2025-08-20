@@ -83,7 +83,7 @@ const SubmitElectionDetails = async () => {
         <BaseInput
           v-model="ElectionDetails.title"
           type="text"
-          placeholder="e.g., GMSA Executive Elections 2025/2026"
+          placeholder="e.g., BESA Executive Elections 2025/2026"
           required
         />
       </label>

@@ -78,7 +78,7 @@ const refreshUser = () => {
   <div class="min-h-screen bg-gray-50">
     <NavBar>
       <template #left>
-        <h1 class="text-xl font-semibold text-gray-700">GMSA <span>Dashboard</span></h1>
+        <h1 class="text-xl font-semibold text-gray-700">BESA <span>Dashboard</span></h1>
       </template>
 
       <template #right>
@@ -316,10 +316,10 @@ const refreshUser = () => {
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <router-link to="" class="flex items-center p-4 border border-gray-200 rounded-lg">
+          <!-- <router-link to="" class="flex items-center p-4 border border-gray-200 rounded-lg">
             <DollarSign class="w-5 h-5 text-amber-600 mr-3" />
-            <span class="text-sm font-medium text-gray-900">Donate to GMSA</span>
-          </router-link>
+            <span class="text-sm font-medium text-gray-900">Donate to BESA</span>
+          </router-link> -->
           <router-link
             to="/admin"
             v-if="authStore.user.is_ec_member === true"

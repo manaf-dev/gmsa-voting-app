@@ -524,8 +524,8 @@ class CandidateListCreateView(generics.ListCreateAPIView):
                 election_title = position.election.title
                 position_title = position.title
                 message = (
-                    f"Assalamu Alaikum. You have been registered as a candidate for the position of '{position_title}' in the GMSA election: {election_title}. All the best"
-                    f"- GMSA EC"
+                    f"Hello, you have been registered as a candidate for the position of '{position_title}' in the BESA election: {election_title}. All the best"
+                    f"- BESA EC"
                 )
                 sms.send_single_sms(candidate_user.phone_number, message)
         except Exception:
@@ -696,7 +696,7 @@ def export_members(request):
     from django.http import HttpResponse
 
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="gmsa_members.csv"'
+    response["Content-Disposition"] = 'attachment; filename="besa_members.csv"'
 
     writer = csv.writer(response)
     writer.writerow(
@@ -773,7 +773,7 @@ def export_members_excel(request):
     # Create workbook and worksheet
     wb = Workbook()
     ws = wb.active
-    ws.title = "GMSA Exhibition Register"
+    ws.title = "BESA Exhibition Register"
 
     # Define headers
     headers = [
@@ -852,7 +852,7 @@ def export_members_excel(request):
     )
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"gmsa_exhibition_register_{timestamp}.xlsx"
+    filename = f"besa_exhibition_register_{timestamp}.xlsx"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     # Save workbook to response

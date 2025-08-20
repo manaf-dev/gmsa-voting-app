@@ -1,5 +1,5 @@
 """
-SMS Service for GMSA Voting System using mnotify API
+SMS Service for BESA Voting System using mnotify API
 
 This service handles all SMS communications including:
 - Welcome messages for new users (bulk registration)
@@ -21,7 +21,7 @@ class SMSService:
 
     def __init__(self):
         self.api_key = getattr(settings, "MNOTIFY_API_KEY", None)
-        self.sender_id = getattr(settings, "MNOTIFY_SENDER_ID", "GMSA")
+        self.sender_id = getattr(settings, "MNOTIFY_SENDER_ID", "BESA")
         self.base_url = getattr(
             settings, "MNOTIFY_BASE_URL", "https://api.mnotify.com/api"
         )
@@ -188,7 +188,7 @@ class SMSMessageTemplates:
         Args:
             user_data: Dict with username, password, student_id, first_name
         """
-        return f"""Assalamu Alaikum, You have been registered as a voter in the upcoming GMSA Election.
+        return f"""Hello, you have been registered as a voter in the BESA Election.
 Below are your account details:
 
 Username: {user_data['username']}
@@ -197,7 +197,7 @@ Password: {user_data['password']}
 Login at: {settings.FRONTEND_URL}/login
 Please change your password after first login.
 
-- GMSA Electoral Commission"""
+- BESA Electoral Commission"""
 
     @staticmethod
     def password_reset(user_data: Dict) -> str:
@@ -207,18 +207,16 @@ Please change your password after first login.
         Args:
             user_data: Dict with username, new_password, first_name
         """
-        return f"""GMSA Password Reset
+        return f"""BESA Password Reset
 
-Assalamu alaikum,
-
-Your password has been reset by EC:
+Hello, your password has been reset by EC:
 Username: {user_data['username']}
 New Password: {user_data['new_password']}
 
 Login at: {settings.FRONTEND_URL}/login
 Please change this password immediately.
 
-- GMSA Electoral Commission"""
+- BESA Electoral Commission"""
 
     @staticmethod
     def voting_reminder(election_data: Dict, user_data: Dict) -> str:
@@ -229,17 +227,16 @@ Please change this password immediately.
             election_data: Dict with title, end_date
             user_data: Dict with first_name
         """
-        return f"""GMSA Voting Reminder
+        return f"""BESA Voting Reminder
 
-Assalamu alaikum,
-
+Hello,
 Election: {election_data['title']}
 Voting ends: {election_data['end_date']}
 
 You haven't voted yet. Cast your vote now!
 Login: {settings.FRONTEND_URL}/login
 
-- GMSA Electoral Commission"""
+- BESA Electoral Commission"""
 
     @staticmethod
     def results_published(election_data: Dict, user_data: Dict) -> str:
@@ -250,14 +247,12 @@ Login: {settings.FRONTEND_URL}/login
             election_data: Dict with title, results_url
             user_data: Dict with first_name
         """
-        return f"""GMSA Election Results Published
+        return f"""BESA Election Results Published
 
-Assalamu alaikum,
-
-Official results for '{election_data.get('title')}' are now available.
+Hello, Official results for '{election_data.get('title')}' are now available.
 View results: {election_data.get('results_url')}
 
-- GMSA Electoral Commission"""
+- BESA Electoral Commission"""
 
     @staticmethod
     def dues_payment_reminder(user_data: Dict, academic_year: str) -> str:
@@ -268,16 +263,14 @@ View results: {election_data.get('results_url')}
             user_data: Dict with first_name
             academic_year: Academic year string
         """
-        return f"""GMSA Dues Reminder
+        return f"""BESA Dues Reminder
 
-Assalamu alaikum,
-
-Your dues for {academic_year} are unpaid.
+Hello, your dues for {academic_year} are unpaid.
 Pay now to be eligible for voting.
 
 Login: {settings.FRONTEND_URL}/login
 
-- GMSA Electoral Commission"""
+- BESA Electoral Commission"""
 
 
 def get_sms_service() -> SMSService:

@@ -157,7 +157,7 @@ class Command(BaseCommand):
 
                     # Generate email if not provided
                     if not email:
-                        email = f"{username}@aamustedgmsa.org"
+                        email = f"{username}@aamustedbesa.org"
 
                     # Check if user exists
                     user_exists = User.objects.filter(student_id=student_id).exists()

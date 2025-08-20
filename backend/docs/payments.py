@@ -55,7 +55,7 @@ initiate_dues_payment_schema = extend_schema(
 initiate_donation_schema = extend_schema(
     summary="Initiate donation payment",
     description="""
-    Initiate a donation payment to GMSA.
+    Initiate a donation payment to BESA.
     
     This endpoint:
     1. Creates a donation record

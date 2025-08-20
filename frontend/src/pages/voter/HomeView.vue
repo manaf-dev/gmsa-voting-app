@@ -3,25 +3,24 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Attempt to load the logo asset (currently stored as 'gmsalogo' without extension)
-// If build fails, rename asset to gmsalogo.jpg and update path accordingly.
+// Attempt to load the BESA logo asset
 let logoSrc: string | undefined
 try {
   // @ts-ignore - Vite will resolve at runtime if recognized as an asset
-  logoSrc = new URL('@/assets/gmsalogo.png', import.meta.url).href
+  logoSrc = new URL('@/assets/BESA_LOGO.jpeg', import.meta.url).href
 } catch (e) {
   logoSrc = ''
 }
 
 const primaryActions = [
   { label: 'Login', to: '/login', style: 'bg-green-600 hover:bg-green-700 text-white' },
-  { label: 'Donate to GMSA', to: '/payment/donation', style: 'bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur' },
+  { label: 'Donate to BESA', to: '/payment/donation', style: 'bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur' },
 ]
 
 const pillars = [
-  { title: 'Faith', body: 'Upholding Islamic values while fostering academic excellence.' },
-  { title: 'Service', body: 'Community impact through outreach, charity and mentorship.' },
-  { title: 'Leadership', body: 'Building disciplined, visionary student leaders for the Ummah.' },
+  { title: 'Excellence', body: 'Promoting academic achievement and educational advancement.' },
+  { title: 'Service', body: 'Community impact through outreach, support and mentorship.' },
+  { title: 'Leadership', body: 'Building capable, visionary student leaders for tomorrow.' },
 ]
 
 const go = (to: string) => router.push(to)
@@ -34,17 +33,17 @@ const go = (to: string) => router.push(to)
       <div class="max-w-6xl mx-auto flex items-center justify-between px-5 py-3 sm:py-4">
         <div class="flex items-center gap-3">
           <div class="relative h-11 w-11 flex items-center justify-center">
-            <img v-if="logoSrc" :src="logoSrc" alt="GMSA Logo" class="h-11 w-11 object-contain drop-shadow" />
-            <div v-else class="h-11 w-11 rounded-lg bg-green-600 text-white flex items-center justify-center font-bold text-lg">G</div>
+            <img v-if="logoSrc" :src="logoSrc" alt="BESA Logo" class="h-11 w-11 object-contain drop-shadow" />
+            <div v-else class="h-11 w-11 rounded-lg bg-green-600 text-white flex items-center justify-center font-bold text-lg">B</div>
           </div>
             <div class="leading-tight">
-              <p class="font-semibold text-gray-800 text-sm sm:text-base">AAMUSTED GMSA</p>
-              <p class="text-[10px] sm:text-[11px] text-gray-500 tracking-wide uppercase">Ghana Muslim Students Association</p>
+              <p class="font-semibold text-gray-800 text-sm sm:text-base">AAMUSTED BESA</p>
+              <p class="text-[10px] sm:text-[11px] text-gray-500 tracking-wide uppercase">Basic Education Students Association</p>
             </div>
         </div>
         <nav class="flex items-center gap-2 sm:gap-3">
           <router-link to="/login" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:text-white hover:bg-green-600 transition-colors">Login</router-link>
-          <router-link to="/" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors">Donate</router-link>
+          <!-- <router-link to="/" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors">Donate</router-link> -->
         </nav>
       </div>
     </header>
@@ -58,14 +57,14 @@ const go = (to: string) => router.push(to)
         </div>
         <div class="relative max-w-4xl mx-auto text-center">
           <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
-            AAMUSTED <span class="text-green-600">GMSA</span>
+            BESA <span class="text-green-600">goes to the polls</span>
           </h1>
           <p class="mt-4 text-gray-600 text-sm sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            A faith-driven student community devoted to spiritual growth, academic excellence,
-            leadership development and service to humanity on the AAMUSTED campus.
+            A dedicated student community committed to academic excellence and
+            educational advancement.
           </p>
           <p class="mt-3 text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
-            Together in Faith, Knowledge and Service.
+            Together in Knowledge, Growth and Service.
           </p>
           <!-- <div class="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
             <button
@@ -87,19 +86,19 @@ const go = (to: string) => router.push(to)
       </section>
 
       <!-- Pillars (very short) -->
-      <section class="px-6 pb-14">
+      <!-- <section class="px-6 pb-14">
         <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
           <div v-for="p in pillars" :key="p.title" class="bg-white rounded-xl border border-green-100/70 shadow-sm p-5 text-center hover:shadow-md transition-shadow">
             <h3 class="font-semibold text-gray-900 tracking-wide text-sm uppercase mb-2">{{ p.title }}</h3>
             <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ p.body }}</p>
           </div>
         </div>
-      </section>
+      </section> -->
     </main>
 
     <!-- Compact footer -->
     <footer class="border-t border-gray-200 py-6 text-center text-xs text-gray-500">
-      <p>&copy; {{ new Date().getFullYear() }} AAMUSTED GMSA. All rights reserved.</p>
+      <p>&copy; {{ new Date().getFullYear() }} AAMUSTED BESA. All rights reserved.</p>
     </footer>
   </div>
 </template>

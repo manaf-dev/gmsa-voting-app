@@ -1,5 +1,5 @@
 """
-Django management command to start Celery Beat scheduler for GMSA Voting System
+Django management command to start Celery Beat scheduler for BESA Voting System
 
 Usage:
     python manage.py celery_beat

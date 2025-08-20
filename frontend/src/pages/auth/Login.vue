@@ -46,8 +46,8 @@ const SubmitUserDetails = async () => {
         </BaseBtn>
       </div> -->
       <div class="mb-4">
-        <h1 class="text-3xl font-bold text-primary-600">AAMUSTED GMSA</h1>
-        <p class="text-sm text-gray-600">Ghana Muslim Students Association</p>
+        <h1 class="text-3xl font-bold text-primary-600">AAMUSTED BESA</h1>
+        <p class="text-sm text-gray-600">Basic Education Students Association</p>
       </div>
 
       <!--Form-->
