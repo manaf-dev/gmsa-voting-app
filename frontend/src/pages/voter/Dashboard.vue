@@ -2,7 +2,6 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import BaseBtn from '@/components/BaseBtn.vue'
-import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 
 import { useAuthStore } from '@/stores/authStore'
 import { useElectionStore } from '@/stores/electionStore'
@@ -58,20 +57,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-// Show ChangePasswordModal if password is not changed
-const showChangePasswordModal = computed(() => authStore.user && authStore.user.changed_password === false)
 
-// After password change, refresh user data
-const refreshUser = () => {
-  if (authStore.user?.id) {
-    import('@/services/api').then(api => {
-      api.default.get(`/accounts/users/${authStore.user.id}/retrieve/`).then(me => {
-        authStore.user = me.data
-        localStorage.setItem('auth_user', JSON.stringify(authStore.user))
-      })
-    })
-  }
-}
 </script>
 
 <template>
@@ -333,12 +319,12 @@ const refreshUser = () => {
     </div>
 
     <!-- Change Password Modal -->
-    <ChangePasswordModal
+    <!-- <ChangePasswordModal
       v-if="showChangePasswordModal"
       :show="showChangePasswordModal"
       @close="() => {}"
       @password-changed="refreshUser"
-    />
+    /> -->
   </div>
 </template>
 
