@@ -118,8 +118,9 @@ def cast_vote(request):
 
                 # Duplicate check per position
                 if Vote.has_voter_voted_for_position(request.user, position):
-                    raise transaction.TransactionManagementError(
-                        f"Already voted for position {position.title}"
+                    return Response(
+                        {"error": "Already voted"},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
                 v = Vote.create_secure_vote(
