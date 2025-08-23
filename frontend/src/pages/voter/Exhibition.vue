@@ -126,7 +126,7 @@
         </div>
 
         <!-- Register -->
-        <div
+        <!-- <div
           v-else-if="step === 'register'"
           key="register"
           class="bg-white/85 backdrop-blur rounded-xl shadow-sm border border-emerald-100 p-6 space-y-6"
@@ -201,7 +201,7 @@
               <button type="button" @click="reset" class="btn-link">Start over</button>
             </div>
           </form>
-        </div>
+        </div> -->
 
         <!-- Submitted -->
         <div
@@ -255,22 +255,23 @@ const phone = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const form = ref({
-  phone: '',
-  first_name: '',
-  last_name: '',
-  student_id: '',
-  program: '',
-  year_of_study: '',
-})
+// const form = ref({
+//   phone: '',
+//   first_name: '',
+//   last_name: '',
+//   student_id: '',
+//   program: '',
+//   year_of_study: '',
+// })
 
 function normalizePhone(input: string) {
+  // if number less or greater than 10 - error, or doesn't start with 0
   let digits = input.replace(/\D/g, '')
-  if (digits.startsWith('233') && digits.length >= 12) {
-    digits = '0' + digits.slice(3, 12)
-  } else if (digits.length === 9) {
-    digits = '0' + digits
+  if (digits.length !== 10 || !digits.startsWith('0')) {
+    error.value = 'Invalid phone number'
   }
+  
+  // if number is valid, return it
   return digits
 }
 
@@ -283,10 +284,11 @@ async function handleLookup() {
     const res = await exhibitionLookup(normalized)
     if (res.status === 'found') {
       step.value = 'found'
-    } else {
-      form.value.phone = normalized
-      step.value = 'register'
-    }
+    } 
+    // else {
+    //   form.value.phone = normalized
+    //   step.value = 'register'
+    // }
   } catch (e: any) {
     error.value = e?.response?.data?.phone?.[0] || e?.response?.data?.detail || 'Lookup failed'
   } finally {
@@ -294,33 +296,33 @@ async function handleLookup() {
   }
 }
 
-async function handleRegister() {
-  error.value = ''
-  loading.value = true
-  try {
-    form.value.phone = normalizePhone(form.value.phone || phone.value)
-    const res = await exhibitionRegister(form.value)
-    if (res.status === 'created' || res.status === 'exists') {
-      step.value = res.status === 'exists' ? 'found' : 'submitted'
-    }
-  } catch (e: any) {
-    error.value = e?.response?.data?.detail || 'Registration failed'
-  } finally {
-    loading.value = false
-  }
-}
+// async function handleRegister() {
+//   error.value = ''
+//   loading.value = true
+//   try {
+//     form.value.phone = normalizePhone(form.value.phone || phone.value)
+//     const res = await exhibitionRegister(form.value)
+//     if (res.status === 'created' || res.status === 'exists') {
+//       step.value = res.status === 'exists' ? 'found' : 'submitted'
+//     }
+//   } catch (e: any) {
+//     error.value = e?.response?.data?.detail || 'Registration failed'
+//   } finally {
+//     loading.value = false
+//   }
+// }
 
 function reset() {
   step.value = 'lookup'
   phone.value = ''
-  form.value = {
-    phone: '',
-    first_name: '',
-    last_name: '',
-    student_id: '',
-    program: '',
-    year_of_study: '',
-  }
+  // form.value = {
+  //   phone: '',
+  //   first_name: '',
+  //   last_name: '',
+  //   student_id: '',
+  //   program: '',
+  //   year_of_study: '',
+  // }
   error.value = ''
 }
 </script>
