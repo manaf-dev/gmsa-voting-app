@@ -285,10 +285,9 @@ async function handleLookup() {
     if (res.status === 'found') {
       step.value = 'found'
     } 
-    // else {
-    //   form.value.phone = normalized
-    //   step.value = 'register'
-    // }
+    else {
+      error.value = 'No record found for this phone number'
+    }
   } catch (e: any) {
     error.value = e?.response?.data?.phone?.[0] || e?.response?.data?.detail || 'Lookup failed'
   } finally {
