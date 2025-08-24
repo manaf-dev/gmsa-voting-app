@@ -119,6 +119,27 @@ exhibition_bulk_verify_schema = extend_schema(
     tags=["Exhibition"],
 )
 
+exhibition_reverify_schema = extend_schema(
+    summary="Reverify exhibition entry (EC only)",
+    description="""
+    Reverify a verified exhibition entry that has already been promoted to a user account.
+    This will:
+    1. Generate a new password for the user
+    2. Send a new welcome SMS with updated credentials
+    
+    Use this when a verified user reports not receiving their SMS credentials.
+    """,
+    request=None,
+    responses={200: inline_serializer(name="ExhibitionReverifyResponse", fields={
+        'status': serializers.CharField(),
+        'message': serializers.CharField(),
+        'user_id': serializers.CharField(),
+        'phone': serializers.CharField(),
+        'sms_sent': serializers.BooleanField(),
+    })},
+    tags=["Exhibition"],
+)
+
 
 register_user_schema = extend_schema(
     summary="Register a new user",

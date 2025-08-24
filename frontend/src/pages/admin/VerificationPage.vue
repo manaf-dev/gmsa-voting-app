@@ -35,6 +35,7 @@ const itemsPerPage = 10
 const entries = ref<ExhibitionEntry[]>([])
 // Track which entry is currently being verified (per-row state)
 const verifyingEntryId = ref<string | null>(null)
+const reverifyingEntryId = ref<string | null>(null)
 const bulkVerifying = ref(false)
 const Loading = ref(false)
 const showVerifiedOnly = ref(false) // NEW toggle
@@ -55,6 +56,21 @@ const verifyEntry = async (entryId: string) => {
     toast.error('Failed to verify member')
   } finally {
     verifyingEntryId.value = null
+  }
+}
+
+// Handle user reverification
+const reverifyEntry = async (entryId: string) => {
+  if (reverifyingEntryId.value) return // prevent parallel clicks
+  reverifyingEntryId.value = entryId
+  try {
+    await electionStore.reverifyExhibition(entryId)
+    toast.success('Member reverified successfully')
+    await fetchEntries()
+  } catch (error) {
+    toast.error('Failed to reverify member')
+  } finally {
+    reverifyingEntryId.value = null
   }
 }
 
@@ -268,6 +284,22 @@ const lastPage = () => {
                     <span v-else class="text-green-600 flex items-center gap-1.5">
                       <CheckCheck class="h-3.5 w-3.5" />
                       Verified
+                      <!-- Reverify button for verified entries -->
+                      <BaseBtn
+                        @click="reverifyEntry(entry.id)"
+                        class="ml-2 inline-flex items-center gap-1.5 text-white bg-blue-500 px-2 py-1 rounded-md hover:bg-blue-600 transition-colors disabled:opacity-60 text-xs"
+                        :disabled="reverifyingEntryId === entry.id"
+                        title="Resend SMS with new password"
+                      >
+                        <template v-if="reverifyingEntryId === entry.id">
+                          <RotateCw class="h-3 w-3 animate-spin" />
+                          Resending...
+                        </template>
+                        <template v-else>
+                          <RotateCw class="h-3 w-3" />
+                          Reverify
+                        </template>
+                      </BaseBtn>
                     </span>
                   </div>
                 </td>

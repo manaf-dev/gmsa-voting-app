@@ -5,9 +5,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import logging
 from utils.helpers import _generate_password, _generate_username
 from utils.sms_service import send_welcome_sms
 from .models import User, ExhibitionEntry
+
+logger = logging.getLogger(__name__)
 from docs.accounts import (
     exhibition_lookup_schema,
     exhibition_register_schema,
@@ -17,6 +20,7 @@ from docs.accounts import (
     exhibition_verify_promote_schema,
     exhibition_entries_list_schema,
     exhibition_bulk_verify_schema,
+    exhibition_reverify_schema,
 )
 
 class ExhibitionLookupSerializer(serializers.Serializer):
@@ -314,6 +318,70 @@ class ExhibitionEntriesListView(APIView):
             })
 
         return Response({'count': len(entries), 'entries': entries})
+
+
+@exhibition_reverify_schema
+@exhibition_reverify_schema
+class ExhibitionReverifyView(APIView):
+    """Reverify a verified exhibition entry and resend SMS with new password."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        if not (request.user.is_ec_member or request.user.is_staff):
+            return Response({'detail': 'Forbidden'}, status=403)
+        
+        try:
+            entry = ExhibitionEntry.objects.get(id=user_id, is_verified=True)
+        except ExhibitionEntry.DoesNotExist:
+            return Response({'detail': 'Entry not found or not verified'}, status=404)
+
+        # Check if entry has an associated user account
+        if not entry.user:
+            return Response({'detail': 'Entry has no associated user account. Cannot reverify.'}, status=400)
+
+        user = entry.user
+        
+        try:
+            with transaction.atomic():
+                # Generate new password
+                new_password = _generate_password()
+                user.set_password(new_password)
+                user.changed_password = False  # Force password change on next login
+                user.save()
+                
+                # Update entry verification timestamp
+                entry.verified_at = timezone.now()
+                entry.verified_by = request.user
+                entry.save()
+                
+                # Send welcome SMS with new password
+                if user.phone_number:
+                    try:
+                        send_welcome_sms(user, new_password, async_send=False)  # Send synchronously for immediate feedback
+                        sms_sent = True
+                        sms_error = None
+                    except Exception as e:
+                        logger.error(f"SMS failed for reverify {user.phone_number}: {str(e)}")
+                        sms_sent = False
+                        sms_error = str(e)
+                else:
+                    sms_sent = False
+                    sms_error = "No phone number available"
+                
+                return Response({
+                    'status': 'reverified',
+                    'entry_id': str(entry.id),
+                    'user_id': str(user.id),
+                    'username': user.username,
+                    'phone_number': user.phone_number,
+                    'sms_sent': sms_sent,
+                    'sms_error': sms_error,
+                    'message': f'User {user.username} has been reverified and {"new credentials sent via SMS" if sms_sent else "credentials ready (SMS failed)"}.'
+                })
+                
+        except Exception as e:
+            logger.error(f"Error during reverify for entry {user_id}: {str(e)}")
+            return Response({'detail': f'Reverification failed: {str(e)}'}, status=500)
 
 
 @exhibition_bulk_verify_schema
